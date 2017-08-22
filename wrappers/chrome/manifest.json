@@ -1,0 +1,11 @@
+{
+    "manifest_version": 2,
+    "name": "Diver",
+    "description": "Dive into the network traffic",
+    "version": "0.0.1",
+    "devtools_page": "devtools.html",
+    "minimum_chrome_version" : "57",
+    "permissions": [
+        "activeTab"
+    ]
+}

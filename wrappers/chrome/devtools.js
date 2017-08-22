@@ -1,0 +1,1 @@
+chrome.devtools.panels.create('Diver', null, 'diver.html', null);

@@ -1,0 +1,29 @@
+{
+    "parser": "babel-eslint",
+    "extends": "eslint:recommended",
+    "env": {
+        "browser": true,
+        "node": true
+    },
+    "globals": {
+        "chrome": true
+    },
+    "plugins": [
+        "react",
+        "jsx-a11y",
+        "import"
+    ],
+    "rules": {
+        "array-bracket-spacing": 2,
+        "indent": 2,
+        "react/jsx-uses-react": 2,
+        "react/jsx-uses-vars": 2,
+        "no-var": 2,
+        "object-curly-spacing": 2,
+        "prefer-const": [2, {
+            "destructuring": "any"
+        }],
+        "quotes": [2, "single"],
+        "semi": 2
+    }
+}
