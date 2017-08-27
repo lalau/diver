@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import ReactTable from 'react-table';
+import selectRuleActionCreator from '../actions/select-rule-action-creator';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
 import removeRuleActionCreator from '../actions/remove-rule-action-creator';
 import SimpleButton from './partials/SimpleButton.jsx';
@@ -11,15 +12,23 @@ class Traffics extends React.Component {
     constructor(props) {
         super(props);
 
-        this.handleInfo = this.handleInfo.bind(this);
+        this.handleRuleInfo = this.handleRuleInfo.bind(this);
+        this.handleTrafficInfo = this.handleTrafficInfo.bind(this);
         this.handleRemoveGroup = this.handleRemoveGroup.bind(this);
     }
 
-    handleInfo({trafficIndex}) {
-        const {onInfo, selectTrafficAction} = this.props;
+    handleRuleInfo({ruleId}) {
+        const {onRuleInfo, selectRuleAction} = this.props;
+
+        selectRuleAction(ruleId);
+        onRuleInfo();
+    }
+
+    handleTrafficInfo({trafficIndex}) {
+        const {onTrafficInfo, selectTrafficAction} = this.props;
 
         selectTrafficAction(trafficIndex);
-        onInfo(trafficIndex);
+        onTrafficInfo();
     }
 
     handleRemoveGroup({ruleId}) {
@@ -41,7 +50,7 @@ class Traffics extends React.Component {
             },
             {
                 accessor: 'index',
-                Cell: props => <SimpleButton className='info-button' handleClick={this.handleInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
+                Cell: props => <SimpleButton className='info-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
                 width: 32
             }
         ];
@@ -59,9 +68,9 @@ class Traffics extends React.Component {
         return (
             <div key={ruleInfo.id} className='traffic-group'>
                 <div className='traffic-group-header' style={{backgroundColor: '#' + ruleInfo.color}}>
-                    <h2 className='traffic-group-title'>{ruleInfo.match.host}</h2>
+                    <h2 className='traffic-group-title'>{ruleInfo.name}</h2>
                     <div className='edit-buttons'>
-                        <SimpleButton className='remove-button' handleClick={this.handleRemoveGroup} params={{ruleId: ruleInfo.id}}>Remove</SimpleButton>
+                        <SimpleButton className='info-button' handleClick={this.handleRuleInfo} params={{ruleId: ruleInfo.id}}>...</SimpleButton>
                     </div>
                 </div>
                 <ReactTable
@@ -97,7 +106,8 @@ Traffics.propTypes = {
     selectedTrafficIndex: PropTypes.number,
 
     onDeselect: PropTypes.func,
-    onInfo: PropTypes.func
+    onRuleInfo: PropTypes.func,
+    onTrafficInfo: PropTypes.func
 };
 
 const mapStateToProps = (state) => {
@@ -112,6 +122,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
+        selectRuleAction: bindActionCreators(selectRuleActionCreator, dispatch),
         selectTrafficAction: bindActionCreators(selectTrafficActionCreator, dispatch),
         removeRuleAction: bindActionCreators(removeRuleActionCreator, dispatch)
     };

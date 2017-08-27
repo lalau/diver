@@ -1,10 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {bindActionCreators} from 'redux';
-import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
 
-class InfoPane extends React.Component {
+class TrafficInfo extends React.Component {
     constructor(props) {
         super(props);
 
@@ -12,9 +10,8 @@ class InfoPane extends React.Component {
     }
 
     closePane() {
-        const {onClose, selectTrafficAction} = this.props;
+        const {onClose} = this.props;
 
-        selectTrafficAction();
         onClose();
     }
 
@@ -26,7 +23,7 @@ class InfoPane extends React.Component {
     }
 }
 
-InfoPane.propTypes = {
+TrafficInfo.propTypes = {
     selectedTrafficIndex: PropTypes.number,
 
     onClose: PropTypes.func
@@ -38,13 +35,11 @@ const mapStateToProps = (state) => {
     };
 };
 
-const mapDispatchToProps = (dispatch) => {
-    return {
-        selectTrafficAction: bindActionCreators(selectTrafficActionCreator, dispatch)
-    };
+const mapDispatchToProps = (/*dispatch*/) => {
+    return {};
 };
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(InfoPane);
+)(TrafficInfo);

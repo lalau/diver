@@ -1,5 +1,11 @@
 export const isMatchingTraffic = (trafficInfo, ruleInfo) => {
-    return ruleInfo.match.host === trafficInfo.parsed.host;
+    return ruleInfo.filters.every(({name, /*key, */value}) => {
+        if (name === 'domain') {
+            return testStr(trafficInfo.parsed.hostname, value);
+        } else {
+            return true;
+        }
+    });
 };
 
 export const getRandomColor = () => {
@@ -10,4 +16,12 @@ export const getRandomColor = () => {
         color += hex.length === 1 ? ('0' + hex) : hex;
     }
     return color;
+};
+
+export const testStr = (str, rule) => {
+    if (rule.includes('*')) {
+        return new RegExp('^' + rule.split('*').join('.*') + '$').test(str);
+    } else {
+        return str === rule;
+    }
 };

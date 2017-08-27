@@ -10,16 +10,21 @@ const DEFAULT_STATE = {
 /*
 {
     ruleInfos: {
-        {
+        [uuid]: {
             id: uuid,
             color: 'AABBCC',
-            match: {
-                host: 'bats.video.yahoo.com',
-                path: '/p',
-                query: {
-                    'evt': 'v_request'
+            name: 'bats.video.yahoo.com',
+            filters: [
+                {
+                    name: domain,
+                    value: 'bats.video.yahoo.com'
+                },
+                {
+                    name: has-response-header,
+                    value: 'connection',
+                    valueMatch: '*'
                 }
-            },
+            ],
             data: [
                 {
                     query: 's',
@@ -28,7 +33,8 @@ const DEFAULT_STATE = {
             ]
         }
     },
-    ruleIds: [uuid, ...]
+    ruleIds: [uuid, ...],
+    selectedRuleId: uuid
 }
 */
 
@@ -38,9 +44,41 @@ export default (state, {type, payload}) => {
         return newTrafficRule(state, payload);
     case 'REMOVE_RULE':
         return removeRule(state, payload);
+    case 'SELECT_RULE':
+        return selectRule(state, payload);
+    case 'UPDATE_RULE_FILTER':
+        return updateRuleFilter(state, payload);
     default:
         return state || DEFAULT_STATE;
     }
+};
+
+const updateRuleFilter = (state, {ruleId, type, filterIndex, value, valueMatch}) => {
+
+    if (type === 'update') {
+        return update(state, {
+            ruleInfos: {
+                [ruleId]: {
+                    filters: {
+                        [filterIndex]: {
+                            value: value ? {$set: value} : {},
+                            valueMatch: valueMatch ? {$set: valueMatch} : {}
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    return state;
+};
+
+const selectRule = (state, {ruleId}) => {
+    return update(state, {
+        selectedRuleId: {
+            $set: ruleId
+        }
+    });
 };
 
 const removeRule = (state, {ruleId}) => {
@@ -56,7 +94,7 @@ const removeRule = (state, {ruleId}) => {
     if (ruleIdIndex >= 0) {
         stateChange.ruleIds = {
             $splice: [[ruleIdIndex, 1]]
-        }
+        };
     }
 
     state = update(state, stateChange);
@@ -65,12 +103,18 @@ const removeRule = (state, {ruleId}) => {
 };
 
 const createRule = (id, trafficInfo) => {
+    const hostname = trafficInfo.parsed.hostname;
+
     return {
         id,
         color: getRandomColor(),
-        match: {
-            host: trafficInfo.parsed.host
-        }
+        name: hostname,
+        filters: [
+            {
+                name: 'domain',
+                value: hostname
+            }
+        ]
     };
 };
 

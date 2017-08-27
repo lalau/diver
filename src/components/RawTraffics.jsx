@@ -12,7 +12,7 @@ class RawTraffics extends React.Component {
         super(props);
 
         this.handleDive = this.handleDive.bind(this);
-        this.handleInfo = this.handleInfo.bind(this);
+        this.handleTrafficInfo = this.handleTrafficInfo.bind(this);
     }
 
     handleDive({trafficIndex}) {
@@ -22,11 +22,11 @@ class RawTraffics extends React.Component {
         newTrafficRuleAction(trafficInfo);
     }
 
-    handleInfo({trafficIndex}) {
-        const {onInfo, selectTrafficAction} = this.props;
+    handleTrafficInfo({trafficIndex}) {
+        const {onTrafficInfo, selectTrafficAction} = this.props;
 
         selectTrafficAction(trafficIndex);
-        onInfo(trafficIndex);
+        onTrafficInfo(trafficIndex);
     }
 
     render() {
@@ -43,7 +43,7 @@ class RawTraffics extends React.Component {
             },
             {
                 accessor: 'index',
-                Cell: props => <SimpleButton className='info-button' handleClick={this.handleInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
+                Cell: props => <SimpleButton className='info-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
                 width: 32
             }
         ];
@@ -83,7 +83,7 @@ RawTraffics.propTypes = {
     trafficInfos: PropTypes.array,
     selectedTrafficIndex: PropTypes.number,
 
-    onInfo: PropTypes.func
+    onTrafficInfo: PropTypes.func
 };
 
 const mapStateToProps = (state) => {

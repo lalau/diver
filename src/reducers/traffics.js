@@ -3,12 +3,23 @@ import update from 'immutability-helper';
 import {isMatchingTraffic} from '../lib/util';
 
 const DEFAULT_STATE = {
+    filters: {
+        domain: [],
+        'has-response-header': [],
+        method: [],
+        'mime-type': [],
+        'status-code': []
+    },
     trafficInfos: [],
     trafficGroups: {}
 };
 
 /*
 {
+    filters: {
+        domain: [a.com, b.com],
+        method: ['GET', 'POST']
+    },
     trafficInfos: [
         {
             index: 0,
@@ -20,7 +31,7 @@ const DEFAULT_STATE = {
     trafficGroups: {
         [<rule id>]: [traffic index, ...]
     },
-    selectedTraffic: 3
+    selectedTrafficIndex: 3
 }
 */
 
@@ -32,7 +43,7 @@ export default (state, {type, payload}) => {
         return processTraffics(state, payload);
     case 'SELECT_TRAFFIC':
         return selectTraffic(state, payload);
-    case 'CLEAR_TRAFFICS':
+    case 'NAVIGATE':
         return DEFAULT_STATE;
     default:
         return state || DEFAULT_STATE;
@@ -97,7 +108,7 @@ const processRule = (state, {ruleInfo}) => {
             if (ruleIndex >= 0) {
                 trafficInfosUpdate[index] = {
                     ruleIds: {
-                        $splice: [[index, 1]]
+                        $splice: [[ruleIndex, 1]]
                     }
                 };
             }
@@ -131,6 +142,7 @@ const processTraffics = (state, {rules}) => {
 };
 
 const handleNewTraffic = (state, {rules, traffic}) => {
+    const filters = state.filters;
     const index = state.trafficInfos.length;
     const trafficInfo = {
         index,
@@ -139,6 +151,7 @@ const handleNewTraffic = (state, {rules, traffic}) => {
         ruleIds: []
     };
     const trafficGroupsUpdate = {};
+    const filtersUpdate = {};
 
     rules.ruleIds.forEach((ruleId) => {
         const ruleInfo = rules.ruleInfos[ruleId];
@@ -151,7 +164,14 @@ const handleNewTraffic = (state, {rules, traffic}) => {
         }
     });
 
+    filtersUpdate.domain = getSingleFilterUpdate(filters.domain, trafficInfo.parsed.hostname);
+    filtersUpdate['has-response-header'] = getArrayFilterUpdate(filters['has-response-header'], trafficInfo.traffic.response.headers, 'name');
+    filtersUpdate.method = getSingleFilterUpdate(filters.method, trafficInfo.traffic.request.method);
+    filtersUpdate['mime-type'] = getSingleFilterUpdate(filters['mime-type'], trafficInfo.traffic.response.content.mimeType);
+    filtersUpdate['status-code'] = getSingleFilterUpdate(filters['status-code'], trafficInfo.traffic.response.status);
+
     state = update(state, {
+        filters: filtersUpdate,
         trafficInfos: {
             $push: [trafficInfo]
         },
@@ -159,4 +179,30 @@ const handleNewTraffic = (state, {rules, traffic}) => {
     });
 
     return state;
+};
+
+const getSingleFilterUpdate = (filterValues, value) => {
+    if (!filterValues.includes(value)) {
+        const newValues = filterValues.concat();
+        newValues.push(value);
+        newValues.sort();
+        return {$set: newValues};
+    }
+
+    return {};
+};
+
+const getArrayFilterUpdate = (filterValues, arrayValue, path) => {
+    const newValues = filterValues.concat();
+    arrayValue.forEach((value) => {
+        if (newValues.includes(value[path])) {
+            newValues.push(value[path]);
+        }
+    });
+    if (newValues.length > filterValues.length) {
+        newValues.sort();
+        return {$set: newValues};
+    }
+
+    return {};
 };

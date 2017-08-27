@@ -1,41 +1,72 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+import {connect} from 'react-redux';
 import classnames from 'classnames';
 import Traffics from './Traffics.jsx';
 import RawTraffics from './RawTraffics.jsx';
-import InfoPane from './InfoPane.jsx';
+import RuleInfo from './RuleInfo.jsx';
+import TrafficInfo from './TrafficInfo.jsx';
 
 class App extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            infoPaneOpened: false
+            ruleInfo: false,
+            trafficInfo: false
         };
-        this.openInfoPane = this.toggleInfoPane.bind(this, true);
-        this.closeInfoPane = this.toggleInfoPane.bind(this, false);
+        this.openRuleInfo = this.toggleInfoPane.bind(this, true, 'ruleInfo');
+        this.openTrafficInfo = this.toggleInfoPane.bind(this, true, 'trafficInfo');
+        this.closeInfo = this.toggleInfoPane.bind(this, false);
     }
 
-    toggleInfoPane(open) {
-        this.setState({
-            infoPaneOpened: open
-        });
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.navigateTimestamp !== this.props.navigateTimestamp) {
+            this.toggleInfoPane(false);
+        }
+    }
+
+    toggleInfoPane(open, pane) {
+        const newState = {
+            ruleInfo: false,
+            trafficInfo: false
+        };
+
+        if (open && pane) {
+            newState[pane] = true;
+        }
+
+        this.setState(newState);
     }
 
     render() {
-        const {infoPaneOpened} = this.state;
+        const {ruleInfo, trafficInfo} = this.state;
 
         return (
-            <div className={classnames('diver', {'info-pane-opened': infoPaneOpened})}>
+            <div className={classnames('diver', {'info-pane-opened': ruleInfo || trafficInfo})}>
                 <div className='traffic-pane'>
-                    <Traffics onInfo={this.openInfoPane} onDeselect={this.closeInfoPane}/>
-                    <RawTraffics onInfo={this.openInfoPane}/>
+                    <Traffics onTrafficInfo={this.openTrafficInfo} onRuleInfo={this.openRuleInfo} onDeselect={this.closeInfo}/>
+                    <RawTraffics onTrafficInfo={this.openTrafficInfo}/>
                 </div>
                 <div className='info-pane'>
-                    <InfoPane onClose={this.closeInfoPane}/>
+                    {ruleInfo ? <RuleInfo onClose={this.closeInfo}/> : null}
+                    {trafficInfo ? <TrafficInfo onClose={this.closeInfo}/> : null}
                 </div>
             </div>
         );
     }
 }
 
-export default App;
+App.propTypes = {
+    navigateTimestamp: PropTypes.number
+};
+
+const mapStateToProps = (state) => {
+    return {
+        navigateTimestamp: state.app.navigateTimestamp
+    };
+};
+
+export default connect(
+    mapStateToProps
+)(App);
