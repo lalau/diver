@@ -9,7 +9,10 @@ class SimpleButton extends React.Component {
 
     handleClick() {
         const {handleClick, params} = this.props;
-        handleClick(params);
+
+        if (handleClick) {
+            handleClick(params);
+        }
     }
 
     render() {

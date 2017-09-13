@@ -8,7 +8,8 @@ const DEFAULT_STATE = {
         'has-response-header': [],
         method: [],
         'mime-type': [],
-        'status-code': []
+        'status-code': [],
+        'larger-than': ['100', '10k', '1M']
     },
     trafficInfos: [],
     trafficGroups: {}
@@ -29,7 +30,10 @@ const DEFAULT_STATE = {
         }
     ],
     trafficGroups: {
-        [<rule id>]: [traffic index, ...]
+        [<rule id>]: {
+            query: ['evt', 's'],
+            trafficIndexes: [traffic index, ...]
+        }
     },
     selectedTrafficIndex: 3
 }
@@ -87,13 +91,19 @@ const removeOldRules = (state, {ruleInfos}) => {
 };
 
 const processRule = (state, {ruleInfo}) => {
-    const trafficGroup = [];
+    const trafficIndexes = [];
+    const query = [];
     const {id} = ruleInfo;
     const trafficInfosUpdate = {};
 
     state.trafficInfos.forEach((trafficInfo, index) => {
         if (isMatchingTraffic(trafficInfo, ruleInfo)) {
-            trafficGroup.push(trafficInfo.index);
+            trafficIndexes.push(trafficInfo.index);
+            Object.keys(trafficInfo.parsed.query).forEach((queryName) => {
+                if (!query.includes(queryName)) {
+                    query.push(queryName);
+                }
+            });
             // add rule id if not already matched
             if (trafficInfo.ruleIds.indexOf(id) === -1) {
                 trafficInfosUpdate[index] = {
@@ -115,11 +125,16 @@ const processRule = (state, {ruleInfo}) => {
         }
     });
 
+    query.sort();
+
     state = update(state, {
         trafficInfos: trafficInfosUpdate,
         trafficGroups: {
             [id]: {
-                $set: trafficGroup
+                $set: {
+                    query,
+                    trafficIndexes
+                }
             }
         }
     });
@@ -159,16 +174,18 @@ const handleNewTraffic = (state, {rules, traffic}) => {
         if (isMatchingTraffic(trafficInfo, ruleInfo)) {
             trafficInfo.ruleIds.push(ruleInfo.id);
             trafficGroupsUpdate[ruleInfo.id] = {
-                $push: [index]
+                trafficIndexes: {
+                    $push: [index]
+                }
             };
         }
     });
 
-    filtersUpdate.domain = getSingleFilterUpdate(filters.domain, trafficInfo.parsed.hostname);
-    filtersUpdate['has-response-header'] = getArrayFilterUpdate(filters['has-response-header'], trafficInfo.traffic.response.headers, 'name');
-    filtersUpdate.method = getSingleFilterUpdate(filters.method, trafficInfo.traffic.request.method);
-    filtersUpdate['mime-type'] = getSingleFilterUpdate(filters['mime-type'], trafficInfo.traffic.response.content.mimeType);
-    filtersUpdate['status-code'] = getSingleFilterUpdate(filters['status-code'], trafficInfo.traffic.response.status);
+    filtersUpdate.domain = getSetValueUpdate(filters.domain, trafficInfo.parsed.hostname);
+    filtersUpdate['has-response-header'] = getSetValuesUpdate(filters['has-response-header'], trafficInfo.traffic.response.headers, 'name');
+    filtersUpdate.method = getSetValueUpdate(filters.method, trafficInfo.traffic.request.method);
+    filtersUpdate['mime-type'] = getSetValueUpdate(filters['mime-type'], trafficInfo.traffic.response.content.mimeType);
+    filtersUpdate['status-code'] = getSetValueUpdate(filters['status-code'], trafficInfo.traffic.response.status + '');
 
     state = update(state, {
         filters: filtersUpdate,
@@ -181,27 +198,31 @@ const handleNewTraffic = (state, {rules, traffic}) => {
     return state;
 };
 
-const getSingleFilterUpdate = (filterValues, value) => {
-    if (!filterValues.includes(value)) {
-        const newValues = filterValues.concat();
-        newValues.push(value);
-        newValues.sort();
-        return {$set: newValues};
+const getSetValueUpdate = (set, value) => {
+    const normalizedValue = value.trim().toLowerCase();
+
+    if (!set.includes(normalizedValue)) {
+        const newSet = set.concat();
+        newSet.push(normalizedValue);
+        newSet.sort();
+        return {$set: newSet};
     }
 
     return {};
 };
 
-const getArrayFilterUpdate = (filterValues, arrayValue, path) => {
-    const newValues = filterValues.concat();
-    arrayValue.forEach((value) => {
-        if (newValues.includes(value[path])) {
-            newValues.push(value[path]);
+const getSetValuesUpdate = (set, values, attr) => {
+    const newSet = set.concat();
+
+    values.forEach((value) => {
+        const normalizedValue = value[attr].trim().toLowerCase();
+        if (!newSet.includes(normalizedValue)) {
+            newSet.push(normalizedValue);
         }
     });
-    if (newValues.length > filterValues.length) {
-        newValues.sort();
-        return {$set: newValues};
+    if (newSet.length > set.length) {
+        newSet.sort();
+        return {$set: newSet};
     }
 
     return {};

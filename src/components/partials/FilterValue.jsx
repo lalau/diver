@@ -30,8 +30,8 @@ class FilterValue extends React.Component {
         const {candidates} = this.props;
         const inputValue = value.trim().toLowerCase();
         const inputLength = inputValue.length;
-        const suggestions = inputLength === 0 ? [] : candidates.filter((candidate) => {
-            return candidate.indexOf(inputValue) >= 0;
+        const suggestions = inputLength === 0 ? candidates : candidates.filter((candidate) => {
+            return candidate.toLowerCase().indexOf(inputValue) >= 0;
         });
 
         this.setState({suggestions});
@@ -57,7 +57,8 @@ class FilterValue extends React.Component {
                 onSuggestionsClearRequested={this.onSuggestionsClearRequested}
                 getSuggestionValue={suggestion => suggestion}
                 renderSuggestion={suggestion => suggestion}
-                inputProps={inputProps}/>
+                inputProps={inputProps}
+                shouldRenderSuggestions={() => true}/>
         );
     }
 }

@@ -1,6 +1,6 @@
 import update from 'immutability-helper';
 import uuidv1 from 'uuid/v1';
-import {getRandomColor, isMatchingTraffic} from '../lib/util';
+import {getRuleDataIndex, getRandomColor, isMatchingTraffic} from '../lib/util';
 
 const DEFAULT_STATE = {
     ruleInfos: {},
@@ -16,36 +16,49 @@ const DEFAULT_STATE = {
             name: 'bats.video.yahoo.com',
             filters: [
                 {
-                    name: domain,
+                    name: 'domain',
                     value: 'bats.video.yahoo.com'
                 },
                 {
-                    name: has-response-header,
-                    value: 'connection',
-                    valueMatch: '*'
+                    name: 'has-response-header',
+                    value: 'connection'
                 }
             ],
-            data: [
+            data: {
+                query: {
+                    s: {
+                        desc: 'Spaceid'
+                    }
+                }
+            },
+            dataOrder: [
                 {
-                    query: 's',
-                    name: 'Spaceid'
+                    type: 'query',
+                    name: 's'
                 }
             ]
         }
     },
-    ruleIds: [uuid, ...],
-    selectedRuleId: uuid
+    ruleIds: [uuid, ...]
 }
 */
 
 export default (state, {type, payload}) => {
     switch (type) {
+    case 'ADD_RULE_FILTER':
+        return addRuleFilter(state, payload);
     case 'NEW_TRAFFIC_RULE':
         return newTrafficRule(state, payload);
     case 'REMOVE_RULE':
         return removeRule(state, payload);
-    case 'SELECT_RULE':
-        return selectRule(state, payload);
+    case 'REMOVE_RULE_FILTER':
+        return removeRuleFilter(state, payload);
+    case 'REORDER_RULE_DATA':
+        return reorderRuleData(state, payload);
+    case 'UPDATE_RULE_DATA':
+        return updateRuleData(state, payload);
+    case 'UPDATE_RULE':
+        return updateRule(state, payload);
     case 'UPDATE_RULE_FILTER':
         return updateRuleFilter(state, payload);
     default:
@@ -53,18 +66,29 @@ export default (state, {type, payload}) => {
     }
 };
 
-const updateRuleFilter = (state, {ruleId, type, filterIndex, value, valueMatch}) => {
+const reorderRuleData = (state, {ruleId, dataIndex, dir}) => {
+    const dataOrder = state.ruleInfos[ruleId].dataOrder;
+    let dataOrderUpdate;
 
-    if (type === 'update') {
+    if (dir === -1) {
+        if (dataIndex > 0) {
+            dataOrderUpdate = {
+                $splice: [[dataIndex - 1, 2, dataOrder[dataIndex], dataOrder[dataIndex - 1]]]
+            };
+        }
+    } else if (dir === 1) {
+        if (dataIndex < dataOrder.length - 1) {
+            dataOrderUpdate = {
+                $splice: [[dataIndex, 2, dataOrder[dataIndex + 1], dataOrder[dataIndex]]]
+            };
+        }
+    }
+
+    if (dataOrderUpdate) {
         return update(state, {
             ruleInfos: {
                 [ruleId]: {
-                    filters: {
-                        [filterIndex]: {
-                            value: value ? {$set: value} : {},
-                            valueMatch: valueMatch ? {$set: valueMatch} : {}
-                        }
-                    }
+                    dataOrder: dataOrderUpdate
                 }
             }
         });
@@ -73,12 +97,78 @@ const updateRuleFilter = (state, {ruleId, type, filterIndex, value, valueMatch})
     return state;
 };
 
-const selectRule = (state, {ruleId}) => {
+const updateRuleData = (state, {ruleId, updateType, type, name, value}) => {
+    const ruleInfo = state.ruleInfos[ruleId];
+    const dataUpdate = {};
+    const dataOrderUpdate = {};
+
+    if (updateType === 'remove') {
+        const dataIndex = getRuleDataIndex(ruleInfo, type, name);
+        if (dataIndex >= 0) {
+            dataOrderUpdate.$splice = [[dataIndex, 1]];
+        }
+    } else if (updateType === 'add') {
+        if (!ruleInfo.data[type][name]) {
+            dataUpdate[name] = {$set: {}};
+        }
+        dataOrderUpdate.$push = [{type, name}];
+    } else if (updateType === 'update') {
+        dataUpdate[name] = {$merge: value};
+    }
+
+    if (Object.keys(dataUpdate).length > 0 || Object.keys(dataOrderUpdate).length > 0) {
+        return update(state, {
+            ruleInfos: {
+                [ruleId]: {
+                    data: {
+                        [type]: dataUpdate
+                    },
+                    dataOrder: dataOrderUpdate
+                }
+            }
+        });
+    }
+
+    return state;
+};
+
+const addRuleFilter = (state, {ruleId, filterName}) => {
     return update(state, {
-        selectedRuleId: {
-            $set: ruleId
+        ruleInfos: {
+            [ruleId]: {
+                filters: {$push: [{name: filterName, value: ''}]}
+            }
         }
     });
+};
+
+const updateRule = (state, {ruleId, key, value}) => {
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                [key]: {$set: value}
+            }
+        }
+    });
+};
+
+const updateRuleFilter = (state, {ruleId, type, filterIndex, value, valueMatch}) => {
+    if (type === 'update') {
+        return update(state, {
+            ruleInfos: {
+                [ruleId]: {
+                    filters: {
+                        [filterIndex]: {
+                            value: value !== undefined ? {$set: value} : {},
+                            valueMatch: valueMatch !== undefined ? {$set: valueMatch} : {}
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    return state;
 };
 
 const removeRule = (state, {ruleId}) => {
@@ -102,6 +192,18 @@ const removeRule = (state, {ruleId}) => {
     return state;
 };
 
+const removeRuleFilter = (state, {ruleId, filterIndex}) => {
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                filters: {
+                    $splice: [[filterIndex, 1]]
+                }
+            }
+        }
+    });
+};
+
 const createRule = (id, trafficInfo) => {
     const hostname = trafficInfo.parsed.hostname;
 
@@ -111,10 +213,15 @@ const createRule = (id, trafficInfo) => {
         name: hostname,
         filters: [
             {
+                id: uuidv1(),
                 name: 'domain',
                 value: hostname
             }
-        ]
+        ],
+        data: {
+            query: {}
+        },
+        dataOrder: []
     };
 };
 

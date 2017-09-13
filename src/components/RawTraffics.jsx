@@ -34,7 +34,7 @@ class RawTraffics extends React.Component {
         const columns = [
             {
                 accessor: 'index',
-                Cell: props => <SimpleButton className='dive-button' handleClick={this.handleDive} params={{trafficIndex: props.value}}>Dive</SimpleButton>,
+                Cell: props => <SimpleButton className='diver-button' handleClick={this.handleDive} params={{trafficIndex: props.value}}>Dive</SimpleButton>,
                 width: 46
             },
             {
@@ -43,7 +43,7 @@ class RawTraffics extends React.Component {
             },
             {
                 accessor: 'index',
-                Cell: props => <SimpleButton className='info-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
+                Cell: props => <SimpleButton className='diver-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
                 width: 32
             }
         ];

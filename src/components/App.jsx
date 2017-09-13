@@ -41,6 +41,7 @@ class App extends React.Component {
 
     render() {
         const {ruleInfo, trafficInfo} = this.state;
+        const {selectedRuleId} = this.props;
 
         return (
             <div className={classnames('diver', {'info-pane-opened': ruleInfo || trafficInfo})}>
@@ -49,7 +50,7 @@ class App extends React.Component {
                     <RawTraffics onTrafficInfo={this.openTrafficInfo}/>
                 </div>
                 <div className='info-pane'>
-                    {ruleInfo ? <RuleInfo onClose={this.closeInfo}/> : null}
+                    {ruleInfo ? <RuleInfo key={selectedRuleId} onClose={this.closeInfo}/> : null}
                     {trafficInfo ? <TrafficInfo onClose={this.closeInfo}/> : null}
                 </div>
             </div>
@@ -63,7 +64,8 @@ App.propTypes = {
 
 const mapStateToProps = (state) => {
     return {
-        navigateTimestamp: state.app.navigateTimestamp
+        navigateTimestamp: state.app.navigateTimestamp,
+        selectedRuleId: state.app.selectedRuleId
     };
 };
 
