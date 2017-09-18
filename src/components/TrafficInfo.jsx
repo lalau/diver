@@ -31,7 +31,7 @@ TrafficInfo.propTypes = {
 
 const mapStateToProps = (state) => {
     return {
-        selectedTrafficIndex: state.traffics.selectedTrafficIndex
+        selectedTrafficIndex: state.app.selectedTrafficIndex
     };
 };
 

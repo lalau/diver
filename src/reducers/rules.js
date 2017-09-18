@@ -36,6 +36,18 @@ const DEFAULT_STATE = {
                     type: 'query',
                     name: 's'
                 }
+            ],
+            labels: [
+                {
+                    name: 'Video request',
+                    matches: [
+                        {
+                            type: 'query',
+                            name: 'evt',
+                            value: 'v_request'
+                        }
+                    ]
+                }
             ]
         }
     },
@@ -47,14 +59,20 @@ export default (state, {type, payload}) => {
     switch (type) {
     case 'ADD_RULE_FILTER':
         return addRuleFilter(state, payload);
+    case 'ADD_RULE_LABEL':
+        return addRuleLabel(state, payload);
     case 'NEW_TRAFFIC_RULE':
         return newTrafficRule(state, payload);
     case 'REMOVE_RULE':
         return removeRule(state, payload);
     case 'REMOVE_RULE_FILTER':
         return removeRuleFilter(state, payload);
+    case 'REMOVE_RULE_LABEL':
+        return removeRuleLabel(state, payload);
     case 'REORDER_RULE_DATA':
         return reorderRuleData(state, payload);
+    case 'UPDATE_RULE_LABEL':
+        return updateRuleLabel(state, payload);
     case 'UPDATE_RULE_DATA':
         return updateRuleData(state, payload);
     case 'UPDATE_RULE':
@@ -64,6 +82,49 @@ export default (state, {type, payload}) => {
     default:
         return state || DEFAULT_STATE;
     }
+};
+
+const addRuleLabel = (state, {ruleId, label}) => {
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                labels: {
+                    $push: [
+                        {
+                            name: label.name,
+                            matches: []
+                        }
+                    ]
+                }
+            }
+        }
+    });
+};
+
+const removeRuleLabel = (state, {ruleId, labelIndex}) => {
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                labels: {
+                    $splice: [[labelIndex, 1]]
+                }
+            }
+        }
+    });
+};
+
+const updateRuleLabel = (state, {ruleId, labelIndex, label}) => {
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                labels: {
+                    [labelIndex]: {
+                        $merge: label
+                    }
+                }
+            }
+        }
+    });
 };
 
 const reorderRuleData = (state, {ruleId, dataIndex, dir}) => {
@@ -221,7 +282,8 @@ const createRule = (id, trafficInfo) => {
         data: {
             query: {}
         },
-        dataOrder: []
+        dataOrder: [],
+        labels: []
     };
 };
 

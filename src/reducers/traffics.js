@@ -34,8 +34,7 @@ const DEFAULT_STATE = {
             query: ['evt', 's'],
             trafficIndexes: [traffic index, ...]
         }
-    },
-    selectedTrafficIndex: 3
+    }
 }
 */
 
@@ -45,21 +44,11 @@ export default (state, {type, payload}) => {
         return handleNewTraffic(state, payload);
     case 'PROCESS_TRAFFICS':
         return processTraffics(state, payload);
-    case 'SELECT_TRAFFIC':
-        return selectTraffic(state, payload);
     case 'NAVIGATE':
         return DEFAULT_STATE;
     default:
         return state || DEFAULT_STATE;
     }
-};
-
-const selectTraffic = (state, {trafficIndex}) => {
-    return update(state, {
-        selectedTrafficIndex: {
-            $set: trafficIndex
-        }
-    });
 };
 
 const removeOldRules = (state, {ruleInfos}) => {

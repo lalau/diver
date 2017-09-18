@@ -112,3 +112,16 @@ export const getRuleDataIndex = (ruleInfo, type, name) => {
         return orderItem.type === type && orderItem.name === name;
     });
 };
+
+export const getTrafficLabel = (trafficInfo, labels) => {
+    let label = '';
+
+    labels.some(({name, matches}) => {
+        if (matches.length > 0 && matches.every(({type, name, value}) => { return testStr(trafficInfo.parsed[type][name], value); })) {
+            label = name;
+            return true;
+        }
+    });
+
+    return label;
+};

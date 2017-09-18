@@ -4,13 +4,18 @@ import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 import FilterValue from './partials/FilterValue.jsx';
 import addRuleFilterActionCreator from '../actions/add-rule-filter-action-creator';
+import addRuleLabelActionCreator from '../actions/add-rule-label-action-creator';
 import removeRuleFilterActionCreator from '../actions/remove-rule-filter-action-creator';
+import removeRuleLabelActionCreator from '../actions/remove-rule-label-action-creator';
 import updateRuleActionCreator from '../actions/update-rule-action-creator';
 import updateRuleDataActionCreator from '../actions/update-rule-data-action-creator';
 import updateRuleFilterActionCreator from '../actions/update-rule-filter-action-creator';
+import updateRuleLabelActionCreator from '../actions/update-rule-label-action-creator';
 import SimpleButton from './partials/SimpleButton.jsx';
 import SimpleInput from './partials/SimpleInput.jsx';
 import {getRuleDataIndex} from '../lib/util';
+import set from 'lodash/set';
+import update from 'immutability-helper';
 
 class RuleInfo extends React.Component {
     constructor(props) {
@@ -20,12 +25,18 @@ class RuleInfo extends React.Component {
             editingRuleName: false
         };
         this.addFilter = this.addFilter.bind(this);
+        this.addLabel = this.addLabel.bind(this);
+        this.addLabelAttrList = this.addLabelAttrList.bind(this);
         this.closePane = this.closePane.bind(this);
         this.onFilterValueChange = this.onFilterValueChange.bind(this);
         this.removeFilter = this.removeFilter.bind(this);
+        this.removeLabel = this.removeLabel.bind(this);
+        this.removeLabelAttrList = this.removeLabelAttrList.bind(this);
         this.toggleEditRuleName = this.toggleEditRuleName.bind(this);
         this.toggleQueryData = this.toggleQueryData.bind(this);
         this.updateRuleName = this.updateRuleName.bind(this);
+        this.updateLabelAttr = this.updateLabelAttr.bind(this);
+        this.updateLabelAttrList = this.updateLabelAttrList.bind(this);
         this.updateQueryDesc = this.updateQueryDesc.bind(this);
     }
 
@@ -151,17 +162,17 @@ class RuleInfo extends React.Component {
                 <ul className='section-list'>
                     {ruleInfo.filters.map((filter, filterIndex) => {
                         return (
-                            <li className='section-list-item' key={filterIndex}>
-                                <SimpleButton className='filter-button' handleClick={this.removeFilter} params={{filterIndex}}>-</SimpleButton>
+                            <li className='section-flex-row' key={filterIndex}>
+                                <SimpleButton className='section-button diver-button' handleClick={this.removeFilter} params={{filterIndex}}>-</SimpleButton>
                                 <h5 className='filter-name'>{filter.name}</h5>
                                 <FilterValue candidates={trafficFilters[filter.name]} value={filter.value} onChange={this.onFilterValueChange} onChangeParams={{changeTarget: 'value', filterIndex}}/>
                             </li>
                         );
                     })}
                 </ul>
-                <div className='section-list-item'>
-                    <SimpleButton className='filter-button' handleClick={this.addFilter}>+</SimpleButton>
-                    <select className='select-filter' ref={(select) => {this.addFilterSelect = select;}}>
+                <div className='section-flex-row'>
+                    <SimpleButton className='section-button diver-button' handleClick={this.addFilter}>+</SimpleButton>
+                    <select className='section-select' ref={(select) => {this.addFilterSelect = select;}}>
                         <option value=''></option>
                         <option value='domain'>domain</option>
                         <option value='has-response-header'>has-response-header</option>
@@ -170,6 +181,154 @@ class RuleInfo extends React.Component {
                         <option value='status-code'>status-code</option>
                         <option value='larger-than'>larger-than</option>
                     </select>
+                </div>
+            </div>
+        );
+    }
+
+    addLabel() {
+        const {ruleInfo, addRuleLabelAction} = this.props;
+        const name = this.addLabelInput.value;
+
+        if (!name) {
+            return;
+        }
+
+        addRuleLabelAction({
+            ruleId: ruleInfo.id,
+            label: {name}
+        });
+
+        this.addLabelInput.value = '';
+    }
+
+    removeLabel({labelIndex}) {
+        const {ruleInfo, removeRuleLabelAction} = this.props;
+
+        removeRuleLabelAction({
+            ruleId: ruleInfo.id,
+            labelIndex
+        });
+    }
+
+    updateLabelAttr(target, {labelIndex, attr}) {
+        const {ruleInfo, updateRuleLabelAction} = this.props;
+
+        updateRuleLabelAction({
+            ruleId: ruleInfo.id,
+            labelIndex,
+            label: {
+                [attr]: target.value
+            }
+        });
+    }
+
+    addLabelAttrList({labelIndex, attr, targetKey}) {
+        const {ruleInfo, updateRuleLabelAction} = this.props;
+        const list = update(ruleInfo.labels[labelIndex][attr], {
+            $push: [{
+                type: 'query',
+                name: this[targetKey][ruleInfo.id][labelIndex].value,
+                value: ''
+            }]
+        });
+
+        updateRuleLabelAction({
+            ruleId: ruleInfo.id,
+            labelIndex,
+            label: {
+                [attr]: list
+            }
+        });
+    }
+
+    removeLabelAttrList({labelIndex, attr, listIndex}) {
+        const {ruleInfo, updateRuleLabelAction} = this.props;
+        const list = update(ruleInfo.labels[labelIndex][attr], {
+            $splice: [[listIndex, 1]]
+        });
+
+        updateRuleLabelAction({
+            ruleId: ruleInfo.id,
+            labelIndex,
+            label: {
+                [attr]: list
+            }
+        });
+    }
+
+    updateLabelAttrList(target, {labelIndex, attr, path, listIndex}) {
+        const {ruleInfo, updateRuleLabelAction} = this.props;
+        const listUpdate = {};
+
+        path.forEach((part, partIndex) => {
+            if (partIndex === path.length - 1) {
+                listUpdate[part] = {
+                    $set: target.value
+                };
+            } else {
+                listUpdate[part] = {};
+            }
+        });
+
+        const list = update(ruleInfo.labels[labelIndex][attr], {
+            [listIndex]: listUpdate
+        });
+
+        updateRuleLabelAction({
+            ruleId: ruleInfo.id,
+            labelIndex,
+            label: {
+                [attr]: list
+            }
+        });
+    }
+
+    renderLabels() {
+        const {ruleInfo, trafficGroup} = this.props;
+
+        if (trafficGroup.query.length === 0) {
+            return null;
+        }
+
+        return (
+            <div className='labels section'>
+                <h4 className='section-header'>Labels</h4>
+                <ul className='section-list'>
+                    {ruleInfo.labels.map((label, labelIndex) => {
+                        return (
+                            <li className='label-item' key={labelIndex}>
+                                <div className='section-flex-row label-row'>
+                                    <SimpleButton className='section-button diver-button' handleClick={this.removeLabel} params={{labelIndex}}>-</SimpleButton>
+                                    <div className='section-label label-label'>Label</div>
+                                    <SimpleInput className='section-input' type='text' defaultValue={label.name || ''} handleInput={this.updateLabelAttr} params={{labelIndex, attr: 'name'}}/>
+                                </div>
+                                {label.matches.map(({name, value}, matchIndex) => {
+                                    return (
+                                        <div className='section-flex-row' key={matchIndex}>
+                                            <SimpleButton className='section-button diver-button' handleClick={this.removeLabelAttrList} params={{labelIndex, attr: 'matches', listIndex: matchIndex}}>-</SimpleButton>
+                                            <div className='section-label'>{name}</div>
+                                            <SimpleInput className='section-input' type='text' defaultValue={value || ''} handleInput={this.updateLabelAttrList} params={{labelIndex, attr: 'matches', path: ['value'], listIndex: matchIndex}}/>
+                                        </div>
+                                    );
+                                })}
+                                <div className='section-flex-row'>
+                                    <SimpleButton className='section-button diver-button' handleClick={this.addLabelAttrList} params={{labelIndex, attr: 'matches', targetKey: 'addLabelMatchSelects'}}>+</SimpleButton>
+                                    <select className='section-select' ref={(select) => {set(this, ['addLabelMatchSelects', ruleInfo.id, labelIndex], select);}}>
+                                        <option value=''></option>
+                                        {trafficGroup.query.map((name, queryIndex) => {
+                                            return <option value={name} key={queryIndex}>{name}</option>;
+                                        })}
+                                    </select>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+                <div className='section-flex-row'>
+                    <SimpleButton className='section-button diver-button' handleClick={this.addLabel}>+</SimpleButton>
+                    <div className='section-label'>Label</div>
+                    <input className='section-input' ref={(input) => {this.addLabelInput = input;}}/>
                 </div>
             </div>
         );
@@ -192,10 +351,10 @@ class RuleInfo extends React.Component {
                         const querySelected = getRuleDataIndex(ruleInfo, 'query', name) >= 0;
 
                         return (
-                            <li className='section-list-item' key={name}>
+                            <li className='section-flex-row' key={name}>
                                 <SimpleInput className='select-query' type='checkbox' defaultChecked={querySelected} handleChange={this.toggleQueryData} params={{name}}/>
-                                <h5 className='query-name'>{name}</h5>
-                                {querySelected ? <SimpleInput className='query-input' type='text' defaultValue={ruleQuery.desc || ''} handleInput={this.updateQueryDesc} params={{name}}/> : null}
+                                <h5 className='section-label'>{name}</h5>
+                                {querySelected ? <SimpleInput className='section-input' type='text' defaultValue={ruleQuery.desc || ''} handleInput={this.updateQueryDesc} params={{name}}/> : null}
                             </li>
                         );
                     })}
@@ -211,6 +370,7 @@ class RuleInfo extends React.Component {
             <div className='rule-info info-pane-content'>
                 {editingRuleName ? this.renderEditRuleName() : this.renderRuleName()}
                 {this.renderFilters()}
+                {this.renderLabels()}
                 {this.renderQueryData()}
             </div>
         );
@@ -236,10 +396,13 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
     return {
         addRuleFilterAction: bindActionCreators(addRuleFilterActionCreator, dispatch),
+        addRuleLabelAction: bindActionCreators(addRuleLabelActionCreator, dispatch),
         removeRuleFilterAction: bindActionCreators(removeRuleFilterActionCreator, dispatch),
+        removeRuleLabelAction: bindActionCreators(removeRuleLabelActionCreator, dispatch),
         updateRuleAction: bindActionCreators(updateRuleActionCreator, dispatch),
         updateRuleDataAction: bindActionCreators(updateRuleDataActionCreator, dispatch),
         updateRuleFilterAction: bindActionCreators(updateRuleFilterActionCreator, dispatch),
+        updateRuleLabelAction: bindActionCreators(updateRuleLabelActionCreator, dispatch)
     };
 };
 

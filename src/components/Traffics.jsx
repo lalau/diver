@@ -11,7 +11,7 @@ import removeRuleActionCreator from '../actions/remove-rule-action-creator';
 import reorderRuleDataActionCreator from '../actions/reorder-rule-data-action-creator';
 import SimpleButton from './partials/SimpleButton.jsx';
 import DataHeader from './partials/DataHeader.jsx';
-import {getColumnWidth} from '../lib/util';
+import {getColumnWidth, getTrafficLabel} from '../lib/util';
 
 const maxDataColumnWidth = 300;
 const dataHeaderPadding = 46;
@@ -102,10 +102,10 @@ class Traffics extends React.Component {
         return [
             {
                 Header: 'Path',
-                accessor: 'parsed.path'
+                accessor: 'trafficInfo.parsed.path'
             },
             {
-                accessor: 'index',
+                accessor: 'trafficInfo.index',
                 Cell: props => <SimpleButton className='diver-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
                 width: 32
             }
@@ -116,10 +116,25 @@ class Traffics extends React.Component {
         const columns = [];
         const dataOrder = ruleInfo.dataOrder;
 
+        if (ruleInfo.labels.length > 0) {
+            data.forEach((wrapperEntry) => {
+                wrapperEntry.label = getTrafficLabel(wrapperEntry.trafficInfo, ruleInfo.labels);
+            });
+            const accessor = 'label';
+            const text = 'Label';
+
+            columns.push({
+                Header: text,
+                headerClassName: 'label-header',
+                accessor,
+                width: Math.min(maxDataColumnWidth, getColumnWidth(data, accessor, text, dataColumnPadding, dataHeaderPadding))
+            });
+        }
+
         dataOrder.forEach(({type, name}, dataIndex) => {
             const query = ruleInfo.data[type][name];
             const desc = query.desc || name;
-            const accessor = 'parsed.query.' + name;
+            const accessor = 'trafficInfo.parsed.query.' + name;
             const reorderLeft = dataIndex > 0;
             const reorderRight = dataIndex < dataOrder.length - 1;
 
@@ -139,10 +154,12 @@ class Traffics extends React.Component {
         const ruleView = this.state.view[ruleInfo.id] || 'raw';
         const trafficGroup = trafficGroups[ruleInfo.id];
         const filteredTrafficInfos = trafficGroup && trafficGroup.trafficIndexes.map((trafficIndex) => {
-            return trafficInfos[trafficIndex];
+            return {
+                trafficInfo: trafficInfos[trafficIndex]
+            };
         }) || [];
         const getTrProps = (state, rowInfo) => {
-            const {index} = rowInfo.original;
+            const {index} = rowInfo.original.trafficInfo;
             const trProps = {};
 
             if (index === selectedTrafficIndex) {
@@ -207,7 +224,7 @@ const mapStateToProps = (state) => {
         ruleInfos: state.rules.ruleInfos,
         trafficInfos: state.traffics.trafficInfos,
         trafficGroups: state.traffics.trafficGroups,
-        selectedTrafficIndex: state.traffics.selectedTrafficIndex
+        selectedTrafficIndex: state.app.selectedTrafficIndex
     };
 };
 

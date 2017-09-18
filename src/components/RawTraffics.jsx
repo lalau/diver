@@ -90,7 +90,7 @@ const mapStateToProps = (state) => {
     return {
         ruleInfos: state.rules.ruleInfos,
         trafficInfos: state.traffics.trafficInfos,
-        selectedTrafficIndex: state.traffics.selectedTrafficIndex
+        selectedTrafficIndex: state.app.selectedTrafficIndex
     };
 };
 

@@ -116,6 +116,10 @@ body {
             right: 0;
         }
     }
+
+    .label-header {
+        font-weight: bold;
+    }
 }
 
 .info-pane {
@@ -169,10 +173,41 @@ body {
             list-style: none;
         }
 
-        .section-list-item {
+        .section-flex-row {
             display: flex;
             width: 100%;
             margin-bottom: 5px;
+        }
+
+        .section-button {
+            margin-right: 5px;
+            width: 20px;
+            min-width: 20px;
+            line-height: 20px;
+            height: 20px;
+        }
+
+        .section-label {
+            height: 20px;
+            line-height: 20px;
+            margin: 0 5px 0 0;
+            font-size: 12px;
+            font-weight: normal;
+            flex: none;
+        }
+
+        .section-input {
+            flex: 1 1 100%;
+            margin: 0;
+            padding: 0 0 0 5px;
+            border: none;
+            outline: none;
+        }
+
+        .section-select {
+            height: 20px;
+            box-sizing: border-box;
+            max-width: calc(100% - 25px);
         }
     }
 
@@ -180,17 +215,6 @@ body {
         .select-filter {
             width: 100%;
             border: 0;
-        }
-
-        .filter-button {
-            border: 0;
-            margin-right: 5px;
-            padding: 0 6px;
-            border-radius: 2px;
-            width: 20px;
-            min-width: 20px;
-            line-height: 20px;
-            height: 20px;
         }
 
         .filter-name {
@@ -261,31 +285,33 @@ body {
         }
     }
 
+    .labels {
+        .label-item {
+            padding: 5px 5px 0 5px;
+            border: 1px solid #bbb;
+            margin-bottom: 5px;
+        }
+
+        .label-row {
+            border-bottom: 1px solid #bbb;
+            padding-bottom: 5px;
+        }
+
+        .label-label {
+            font-weight: bold;
+        }
+
+        .select-match {
+            border: 0;
+        }
+    }
+
     .query {
         .select-query {
             margin: 0 5px 0 0;
             height: 20px;
             width: 20px;
             flex: none;
-        }
-
-        .query-name {
-            margin: 0;
-            padding-right: 5px;
-            font-size: 12px;
-            font-weight: normal;
-            height: 20px;
-            line-height: 20px;
-            flex: none;
-        }
-
-        .query-input {
-            flex: 1 1 100%;
-            margin: 0;
-            padding: 0;
-            padding-left: 5px;
-            border: none;
-            outline: none;
         }
     }
 }
