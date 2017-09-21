@@ -81,6 +81,10 @@ export const getRandomColor = () => {
 };
 
 export const testStr = (str, rule) => {
+    if (typeof str !== 'string') {
+        return false;
+    }
+
     if (rule.includes('*')) {
         return new RegExp('^' + rule.split('*').join('.*') + '$', 'i').test(str);
     } else {

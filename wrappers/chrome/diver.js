@@ -10,6 +10,17 @@ import reducer from '../../src/reducers/';
 
 const store = createStore(reducer, {});
 
+chrome.storage.sync.get('diverRules', ({diverRules}) => {
+    if (diverRules) {
+        store.dispatch({
+            type: 'IMPORT_RULES',
+            payload: {
+                rules: diverRules
+            }
+        });
+    }
+});
+
 chrome.devtools.network.onRequestFinished.addListener((traffic) => {
     const state = store.getState();
 
@@ -36,19 +47,21 @@ const storeState = {
 store.subscribe(() => {
     const newState = store.getState();
 
-    if (newState.rules.ruleInfos === storeState.rules.ruleInfos && newState.traffics.trafficInfos === storeState.traffics.trafficInfos) {
-        return;
+    if (newState.rules !== storeState.rules) {
+        chrome.storage.sync.set({'diverRules': newState.rules});
     }
 
-    storeState.rules = newState.rules;
-    storeState.traffics = newState.traffics;
+    if (newState.rules.ruleInfos !== storeState.rules.ruleInfos || newState.traffics.trafficInfos !== storeState.traffics.trafficInfos) {
+        storeState.rules = newState.rules;
+        storeState.traffics = newState.traffics;
 
-    store.dispatch({
-        type: 'PROCESS_TRAFFICS',
-        payload: {
-            rules: newState.rules
-        }
-    });
+        store.dispatch({
+            type: 'PROCESS_TRAFFICS',
+            payload: {
+                rules: newState.rules
+            }
+        });
+    }
 });
 
 render(

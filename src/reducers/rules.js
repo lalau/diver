@@ -61,6 +61,8 @@ export default (state, {type, payload}) => {
         return addRuleFilter(state, payload);
     case 'ADD_RULE_LABEL':
         return addRuleLabel(state, payload);
+    case 'IMPORT_RULES':
+        return importRules(state, payload);
     case 'NEW_TRAFFIC_RULE':
         return newTrafficRule(state, payload);
     case 'REMOVE_RULE':
@@ -82,6 +84,10 @@ export default (state, {type, payload}) => {
     default:
         return state || DEFAULT_STATE;
     }
+};
+
+const importRules = (state, {rules}) => {
+    return rules;
 };
 
 const addRuleLabel = (state, {ruleId, label}) => {

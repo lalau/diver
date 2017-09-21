@@ -16,13 +16,18 @@ class SimpleButton extends React.Component {
     }
 
     render() {
-        const {className, children} = this.props;
-        return (<button className={className} onClick={this.handleClick}>{children}</button>);
+        const {className, children, disabled} = this.props;
+        return (<button className={className} onClick={this.handleClick} disabled={disabled}>{children}</button>);
     }
 }
 
+SimpleButton.defaultProps ={
+    disabled: false
+};
+
 SimpleButton.propTypes = {
     className: PropTypes.string,
+    disabled: PropTypes.bool,
     handleClick: PropTypes.func,
     params: PropTypes.object
 };

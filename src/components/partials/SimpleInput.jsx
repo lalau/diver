@@ -19,17 +19,23 @@ class SimpleInput extends React.Component {
     }
 
     render() {
-        const {className, defaultChecked, defaultValue, type} = this.props;
-        return (<input className={className} type={type} onInput={this.handleInput} onChange={this.handleChange} defaultChecked={defaultChecked} defaultValue={defaultValue}/>);
+        const {className, defaultChecked, defaultValue, placeholder, type} = this.props;
+        return (<input className={className} type={type} onInput={this.handleInput} onChange={this.handleChange} defaultChecked={defaultChecked} defaultValue={defaultValue} placeholder={placeholder}/>);
     }
 }
+
+SimpleInput.defaultProps ={
+    placeholder: ''
+};
 
 SimpleInput.propTypes = {
     className: PropTypes.string,
     defaultChecked: PropTypes.bool,
     defaultValue: PropTypes.string,
     handleClick: PropTypes.func,
-    params: PropTypes.object
+    params: PropTypes.object,
+    placeholder: PropTypes.string,
+    type: PropTypes.string
 };
 
 export default SimpleInput;

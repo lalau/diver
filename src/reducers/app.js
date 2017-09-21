@@ -1,7 +1,6 @@
 import update from 'immutability-helper';
 
 const DEFAULT_STATE = {
-    navigateTimestamp: null,
     selectedRuleId: null,
     selectedTrafficIndex: null,
     ui: {}
@@ -9,7 +8,6 @@ const DEFAULT_STATE = {
 
 /*
 {
-    navigateTimestamp: 123456,
     selectedRuleId: uuid,
     selectedTrafficIndex: 3,
     ui: {}
@@ -31,8 +29,11 @@ export default (state, {type, payload}) => {
 
 const handleNavigate = (state) => {
     return update(state, {
-        navigateTimestamp: {
-            $set: Date.now()
+        selectedRuleId: {
+            $set: null
+        },
+        selectedTrafficIndex: {
+            $set: null
         }
     });
 };

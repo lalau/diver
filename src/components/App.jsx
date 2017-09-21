@@ -12,60 +12,64 @@ class App extends React.Component {
         super(props);
 
         this.state = {
-            ruleInfo: false,
-            trafficInfo: false
+            view: 'traffic'
         };
-        this.openRuleInfo = this.toggleInfoPane.bind(this, true, 'ruleInfo');
-        this.openTrafficInfo = this.toggleInfoPane.bind(this, true, 'trafficInfo');
-        this.closeInfo = this.toggleInfoPane.bind(this, false);
+        this.toggleRuleview = this.toggleView.bind(this, 'rule');
+        this.toggleTrafficview = this.toggleView.bind(this, 'traffic');
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (nextProps.navigateTimestamp !== this.props.navigateTimestamp) {
-            this.toggleInfoPane(false);
-        }
+    toggleView(view) {
+        this.setState({view});
     }
 
-    toggleInfoPane(open, pane) {
-        const newState = {
-            ruleInfo: false,
-            trafficInfo: false
-        };
+    renderTrafficView() {
+        const {selectedRuleId, selectedTrafficIndex} = this.props;
 
-        if (open && pane) {
-            newState[pane] = true;
-        }
+        return (
+            <div className={classnames('traffic-view', {'info-pane-opened': selectedRuleId !== null || selectedTrafficIndex !== null})}>
+                <div className='traffic-pane'>
+                    <Traffics/>
+                    <RawTraffics/>
+                </div>
+                <div className='info-pane'>
+                    {selectedRuleId !== null ? <RuleInfo key={selectedRuleId}/> : null}
+                    {selectedTrafficIndex !== null ? <TrafficInfo key={selectedTrafficIndex}/> : null}
+                </div>
+            </div>
+        );
+    }
 
-        this.setState(newState);
+    renderRuleView() {
+        return (
+            <div className='rule-view'></div>
+        );
     }
 
     render() {
-        const {ruleInfo, trafficInfo} = this.state;
-        const {selectedRuleId} = this.props;
+        const {view} = this.state;
 
         return (
-            <div className={classnames('diver', {'info-pane-opened': ruleInfo || trafficInfo})}>
-                <div className='traffic-pane'>
-                    <Traffics onTrafficInfo={this.openTrafficInfo} onRuleInfo={this.openRuleInfo} onDeselect={this.closeInfo}/>
-                    <RawTraffics onTrafficInfo={this.openTrafficInfo}/>
+            <div>
+                <div className='menu-bar'>
+                    <button className='menu-button' onClick={this.toggleTrafficview}>&#9783; Traffics</button>
+                    <button className='menu-button' onClick={this.toggleRuleview}>&#10040; Rules</button>
                 </div>
-                <div className='info-pane'>
-                    {ruleInfo ? <RuleInfo key={selectedRuleId} onClose={this.closeInfo}/> : null}
-                    {trafficInfo ? <TrafficInfo onClose={this.closeInfo}/> : null}
-                </div>
+                {view === 'traffic' ? this.renderTrafficView() : null}
+                {view === 'rule' ? this.renderRuleView() : null}
             </div>
         );
     }
 }
 
 App.propTypes = {
-    navigateTimestamp: PropTypes.number
+    selectedRuleId: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    selectedTrafficIndex: PropTypes.oneOfType([PropTypes.number, PropTypes.object])
 };
 
 const mapStateToProps = (state) => {
     return {
-        navigateTimestamp: state.app.navigateTimestamp,
-        selectedRuleId: state.app.selectedRuleId
+        selectedRuleId: state.app.selectedRuleId,
+        selectedTrafficIndex: state.app.selectedTrafficIndex
     };
 };
 

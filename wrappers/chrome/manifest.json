@@ -6,6 +6,7 @@
     "devtools_page": "devtools.html",
     "minimum_chrome_version" : "57",
     "permissions": [
-        "activeTab"
+        "activeTab",
+        "storage"
     ]
 }

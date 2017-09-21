@@ -7,7 +7,6 @@ import update from 'immutability-helper';
 import classnames from 'classnames';
 import selectRuleActionCreator from '../actions/select-rule-action-creator';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
-import removeRuleActionCreator from '../actions/remove-rule-action-creator';
 import reorderRuleDataActionCreator from '../actions/reorder-rule-data-action-creator';
 import SimpleButton from './partials/SimpleButton.jsx';
 import DataHeader from './partials/DataHeader.jsx';
@@ -24,8 +23,7 @@ class Traffics extends React.Component {
         this.state = {
             view: {}
         };
-        this.handleRuleInfo = this.handleRuleInfo.bind(this);
-        this.handleRemoveGroup = this.handleRemoveGroup.bind(this);
+        this.selectRule = this.selectRule.bind(this);
         this.handleTrafficInfo = this.handleTrafficInfo.bind(this);
         this.handleViewChange = this.handleViewChange.bind(this);
         this.reorderData = this.reorderData.bind(this);
@@ -61,25 +59,16 @@ class Traffics extends React.Component {
         }
     }
 
-    handleRuleInfo({ruleId}) {
-        const {onRuleInfo, selectRuleAction} = this.props;
+    selectRule({ruleId}) {
+        const {selectRuleAction} = this.props;
 
         selectRuleAction(ruleId);
-        onRuleInfo();
     }
 
     handleTrafficInfo({trafficIndex}) {
-        const {onTrafficInfo, selectTrafficAction} = this.props;
+        const {selectTrafficAction} = this.props;
 
         selectTrafficAction(trafficIndex);
-        onTrafficInfo();
-    }
-
-    handleRemoveGroup({ruleId}) {
-        const {onDeselect, removeRuleAction} = this.props;
-
-        removeRuleAction(ruleId);
-        onDeselect();
     }
 
     handleViewChange({ruleId, view}) {
@@ -103,11 +92,6 @@ class Traffics extends React.Component {
             {
                 Header: 'Path',
                 accessor: 'trafficInfo.parsed.path'
-            },
-            {
-                accessor: 'trafficInfo.index',
-                Cell: props => <SimpleButton className='diver-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
-                width: 32
             }
         ];
     }
@@ -150,7 +134,7 @@ class Traffics extends React.Component {
     }
 
     renderTrafficGroup(ruleInfo) {
-        const {trafficInfos, trafficGroups, selectedTrafficIndex} = this.props;
+        const {trafficInfos, trafficGroups, selectedRuleId, selectedTrafficIndex} = this.props;
         const ruleView = this.state.view[ruleInfo.id] || 'raw';
         const trafficGroup = trafficGroups[ruleInfo.id];
         const filteredTrafficInfos = trafficGroup && trafficGroup.trafficIndexes.map((trafficIndex) => {
@@ -169,16 +153,24 @@ class Traffics extends React.Component {
             return trProps;
         };
         const columns = ruleView === 'data' ? this.getDataColumns(ruleInfo, filteredTrafficInfos) : this.getRawColumns();
-        const hasData = ruleInfo.dataOrder.length > 0;
+        const hasData = ruleInfo.dataOrder.length > 0 || ruleInfo.labels.length > 0;
+
+        columns.unshift({
+            accessor: 'trafficInfo.index',
+            Cell: props => <SimpleButton className='diver-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>&#9776;</SimpleButton>,
+            width: 32
+        });
 
         return (
             <div key={ruleInfo.id} className='traffic-group'>
                 <div className='traffic-group-header' style={{backgroundColor: '#' + ruleInfo.color}}>
                     <h2 className='traffic-group-title'>{ruleInfo.name}</h2>
                     <div className='edit-buttons'>
-                        <SimpleButton className={classnames('diver-button', {selected: ruleView === 'raw'})} handleClick={this.handleViewChange} params={{ruleId: ruleInfo.id, view: 'raw'}}>Raw</SimpleButton>
+                        {hasData ? <SimpleButton className={classnames('diver-button', {selected: ruleView === 'raw'})} handleClick={this.handleViewChange} params={{ruleId: ruleInfo.id, view: 'raw'}}>Raw</SimpleButton> : null}
                         {hasData ? <SimpleButton className={classnames('diver-button', {selected: ruleView === 'data'})} handleClick={this.handleViewChange} params={{ruleId: ruleInfo.id, view: 'data'}}>Data</SimpleButton> : null}
-                        <SimpleButton className='diver-button' handleClick={this.handleRuleInfo} params={{ruleId: ruleInfo.id}}>...</SimpleButton>
+                        {selectedRuleId !== ruleInfo.id ?
+                            <SimpleButton className='diver-button' handleClick={this.selectRule} params={{ruleId: ruleInfo.id}}>&#10000; Edit</SimpleButton> :
+                            <SimpleButton className='diver-button' handleClick={this.selectRule} params={{ruleId: null}}>&#10132; Close</SimpleButton>}
                     </div>
                 </div>
                 <ReactTable
@@ -209,22 +201,20 @@ class Traffics extends React.Component {
 Traffics.propTypes = {
     ruleIds: PropTypes.array,
     ruleInfos: PropTypes.object,
-    trafficInfos: PropTypes.array,
     trafficGroups: PropTypes.object,
-    selectedTrafficIndex: PropTypes.number,
-
-    onDeselect: PropTypes.func,
-    onRuleInfo: PropTypes.func,
-    onTrafficInfo: PropTypes.func
+    trafficInfos: PropTypes.array,
+    selectedRuleId: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+    selectedTrafficIndex: PropTypes.oneOfType([PropTypes.number, PropTypes.object])
 };
 
 const mapStateToProps = (state) => {
     return {
         ruleIds: state.rules.ruleIds,
         ruleInfos: state.rules.ruleInfos,
-        trafficInfos: state.traffics.trafficInfos,
+        selectedRuleId: state.app.selectedRuleId,
+        selectedTrafficIndex: state.app.selectedTrafficIndex,
         trafficGroups: state.traffics.trafficGroups,
-        selectedTrafficIndex: state.app.selectedTrafficIndex
+        trafficInfos: state.traffics.trafficInfos
     };
 };
 
@@ -232,7 +222,6 @@ const mapDispatchToProps = (dispatch) => {
     return {
         selectRuleAction: bindActionCreators(selectRuleActionCreator, dispatch),
         selectTrafficAction: bindActionCreators(selectTrafficActionCreator, dispatch),
-        removeRuleAction: bindActionCreators(removeRuleActionCreator, dispatch),
         reorderRuleDataAction: bindActionCreators(reorderRuleDataActionCreator, dispatch),
     };
 };

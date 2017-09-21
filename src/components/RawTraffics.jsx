@@ -23,10 +23,9 @@ class RawTraffics extends React.Component {
     }
 
     handleTrafficInfo({trafficIndex}) {
-        const {onTrafficInfo, selectTrafficAction} = this.props;
+        const {selectTrafficAction} = this.props;
 
         selectTrafficAction(trafficIndex);
-        onTrafficInfo(trafficIndex);
     }
 
     render() {
@@ -34,17 +33,22 @@ class RawTraffics extends React.Component {
         const columns = [
             {
                 accessor: 'index',
-                Cell: props => <SimpleButton className='diver-button' handleClick={this.handleDive} params={{trafficIndex: props.value}}>Dive</SimpleButton>,
+                Cell: props => <SimpleButton className='diver-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>&#9776;</SimpleButton>,
+                width: 32
+            },
+            {
+                accessor: 'index',
+                Cell: props => {
+                    const {ruleIds} = props.original;
+                    const disabled = !!(ruleIds && ruleIds.length > 0 && ruleInfos[ruleIds[0]]);
+
+                    return <SimpleButton className='diver-button' handleClick={this.handleDive} params={{trafficIndex: props.value}} disabled={disabled}>Dive</SimpleButton>;
+                },
                 width: 46
             },
             {
                 Header: 'URL',
                 accessor: 'traffic.request.url'
-            },
-            {
-                accessor: 'index',
-                Cell: props => <SimpleButton className='diver-button' handleClick={this.handleTrafficInfo} params={{trafficIndex: props.value}}>...</SimpleButton>,
-                width: 32
             }
         ];
         const getTrProps = (state, rowInfo) => {
@@ -81,9 +85,7 @@ class RawTraffics extends React.Component {
 RawTraffics.propTypes = {
     ruleInfos: PropTypes.object,
     trafficInfos: PropTypes.array,
-    selectedTrafficIndex: PropTypes.number,
-
-    onTrafficInfo: PropTypes.func
+    selectedTrafficIndex: PropTypes.oneOfType([PropTypes.number, PropTypes.object])
 };
 
 const mapStateToProps = (state) => {
