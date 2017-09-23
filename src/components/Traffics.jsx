@@ -90,8 +90,8 @@ class Traffics extends React.Component {
     getRawColumns() {
         return [
             {
-                Header: 'Path',
-                accessor: 'trafficInfo.parsed.path'
+                Header: 'URL',
+                accessor: 'trafficInfo.traffic.request.url'
             }
         ];
     }
@@ -115,10 +115,10 @@ class Traffics extends React.Component {
             });
         }
 
-        dataOrder.forEach(({type, name}, dataIndex) => {
-            const query = ruleInfo.data[type][name];
-            const desc = query.desc || name;
-            const accessor = 'trafficInfo.parsed.query.' + name;
+        dataOrder.forEach(({namespace, name}, dataIndex) => {
+            const dataMeta = ruleInfo.data[namespace][name];
+            const desc = dataMeta.desc || name;
+            const accessor = 'trafficInfo.processed.' + namespace + '.' + name;
             const reorderLeft = dataIndex > 0;
             const reorderRight = dataIndex < dataOrder.length - 1;
 

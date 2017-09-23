@@ -25,13 +25,22 @@ const DEFAULT_STATE = {
         {
             index: 0,
             traffic: <raw traffic object>,
-            parsed: <parsed url object>,
-            ruleIds: [rule id, ...]
+            hostname: 'www.yahoo.com',
+            port: '',
+            ruleIds: [rule id, ...],
+            processed: {
+                <namespace>: {
+                    'evt': 'v_api',
+                    's': '123'
+                }
+            }
         }
     ],
     trafficGroups: {
         [<rule id>]: {
-            query: ['evt', 's'],
+            dataKeys: {
+                <namespace>: ['evt', 's']
+            },
             trafficIndexes: [traffic index, ...]
         }
     }
@@ -81,18 +90,26 @@ const removeOldRules = (state, {ruleInfos}) => {
 
 const processRule = (state, {ruleInfo}) => {
     const trafficIndexes = [];
-    const query = [];
+    const dataKeys = {};
     const {id} = ruleInfo;
     const trafficInfosUpdate = {};
+
+    ruleInfo.namespaces.forEach((namespace) => {
+        dataKeys[namespace] = [];
+    });
 
     state.trafficInfos.forEach((trafficInfo, index) => {
         if (isMatchingTraffic(trafficInfo, ruleInfo)) {
             trafficIndexes.push(trafficInfo.index);
-            Object.keys(trafficInfo.parsed.query).forEach((queryName) => {
-                if (!query.includes(queryName)) {
-                    query.push(queryName);
-                }
+
+            Object.keys(trafficInfo.processed).forEach((namespace) => {
+                Object.keys(trafficInfo.processed[namespace]).forEach((dataKey) => {
+                    if (!dataKeys[namespace].includes(dataKey)) {
+                        dataKeys[namespace].push(dataKey);
+                    }
+                });
             });
+
             // add rule id if not already matched
             if (trafficInfo.ruleIds.indexOf(id) === -1) {
                 trafficInfosUpdate[index] = {
@@ -114,14 +131,16 @@ const processRule = (state, {ruleInfo}) => {
         }
     });
 
-    query.sort();
+    Object.keys(dataKeys).forEach((namespace) => {
+        dataKeys[namespace].sort();
+    });
 
     state = update(state, {
         trafficInfos: trafficInfosUpdate,
         trafficGroups: {
             [id]: {
                 $set: {
-                    query,
+                    dataKeys,
                     trafficIndexes
                 }
             }
@@ -145,13 +164,16 @@ const processTraffics = (state, {rules}) => {
     return state;
 };
 
-const handleNewTraffic = (state, {rules, traffic}) => {
+const handleNewTraffic = (state, {processors, rules, traffic}) => {
     const filters = state.filters;
     const index = state.trafficInfos.length;
+    const parsedUrl = URL.parse(traffic.request.url);
     const trafficInfo = {
         index,
         traffic,
-        parsed: URL.parse(traffic.request.url, true),
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port,
+        processed: {},
         ruleIds: []
     };
     const trafficGroupsUpdate = {};
@@ -170,7 +192,12 @@ const handleNewTraffic = (state, {rules, traffic}) => {
         }
     });
 
-    filtersUpdate.domain = getSetValueUpdate(filters.domain, trafficInfo.parsed.hostname);
+    Object.keys(processors).forEach((key) => {
+        const processor = processors[key];
+        trafficInfo.processed[processor.namespace] = processor.process(traffic);
+    });
+
+    filtersUpdate.domain = getSetValueUpdate(filters.domain, trafficInfo.hostname);
     filtersUpdate['has-response-header'] = getSetValuesUpdate(filters['has-response-header'], trafficInfo.traffic.response.headers, 'name');
     filtersUpdate.method = getSetValueUpdate(filters.method, trafficInfo.traffic.request.method);
     filtersUpdate['mime-type'] = getSetValueUpdate(filters['mime-type'], trafficInfo.traffic.response.content.mimeType);

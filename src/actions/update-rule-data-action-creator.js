@@ -1,10 +1,10 @@
-const updateRuleDataActionCreator = ({ruleId, updateType, type, name, value}) => {
+const updateRuleDataActionCreator = ({ruleId, updateType, namespace, name, value}) => {
     return {
         type: 'UPDATE_RULE_DATA',
         payload: {
             ruleId,
             updateType,
-            type,
+            namespace,
             name,
             value
         }

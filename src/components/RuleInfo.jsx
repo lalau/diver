@@ -15,32 +15,36 @@ import updateRuleFilterActionCreator from '../actions/update-rule-filter-action-
 import updateRuleLabelActionCreator from '../actions/update-rule-label-action-creator';
 import SimpleButton from './partials/SimpleButton.jsx';
 import SimpleInput from './partials/SimpleInput.jsx';
-import {getRuleDataIndex} from '../lib/util';
+import SimpleSelect from './partials/SimpleSelect.jsx';
+import {getProcessorName, getRuleDataIndex} from '../lib/util';
 import set from 'lodash/set';
 import update from 'immutability-helper';
+import uuidv1 from 'uuid/v1';
 
 class RuleInfo extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            editingRuleName: false
+            editingRuleName: false,
+            labelNamespace: {}
         };
         this.addFilter = this.addFilter.bind(this);
         this.addLabel = this.addLabel.bind(this);
-        this.addLabelAttrList = this.addLabelAttrList.bind(this);
+        this.addLabelDataList = this.addLabelDataList.bind(this);
         this.deselectRule = this.deselectRule.bind(this);
         this.onFilterValueChange = this.onFilterValueChange.bind(this);
         this.removeFilter = this.removeFilter.bind(this);
         this.removeLabel = this.removeLabel.bind(this);
-        this.removeLabelAttrList = this.removeLabelAttrList.bind(this);
+        this.removeLabelDataList = this.removeLabelDataList.bind(this);
         this.removeRule = this.removeRule.bind(this);
+        this.selectNamespace = this.selectNamespace.bind(this);
         this.toggleEditRuleName = this.toggleEditRuleName.bind(this);
-        this.toggleQueryData = this.toggleQueryData.bind(this);
+        this.toggleData = this.toggleData.bind(this);
         this.updateRuleName = this.updateRuleName.bind(this);
         this.updateLabelAttr = this.updateLabelAttr.bind(this);
-        this.updateLabelAttrList = this.updateLabelAttrList.bind(this);
-        this.updateQueryDesc = this.updateQueryDesc.bind(this);
+        this.updateLabelDataList = this.updateLabelDataList.bind(this);
+        this.updateDataDesc = this.updateDataDesc.bind(this);
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -111,25 +115,25 @@ class RuleInfo extends React.Component {
         this.addFilterSelect.value = '';
     }
 
-    toggleQueryData(target, params) {
+    toggleData(target, params) {
         const {ruleInfo, updateRuleDataAction} = this.props;
         const updateType = target.checked ? 'add' : 'remove';
 
         updateRuleDataAction({
             ruleId: ruleInfo.id,
             updateType,
-            type: 'query',
+            namespace: params.namespace,
             name: params.name
         });
     }
 
-    updateQueryDesc(target, params) {
+    updateDataDesc(target, params) {
         const {ruleInfo, updateRuleDataAction} = this.props;
 
         updateRuleDataAction({
             ruleId: ruleInfo.id,
             updateType: 'update',
-            type: 'query',
+            namespace: params.namespace,
             name: params.name,
             value: {
                 desc: target.value
@@ -174,13 +178,18 @@ class RuleInfo extends React.Component {
         });
     }
 
-    addLabelAttrList({labelIndex, attr, targetKey}) {
+    addLabelDataList({labelIndex}) {
         const {ruleInfo, updateRuleLabelAction} = this.props;
-        const selectTarget = this[targetKey][ruleInfo.id][labelIndex];
-        const list = update(ruleInfo.labels[labelIndex][attr], {
+        const labelId = ruleInfo.labels[labelIndex].id;
+        const namespaceTarget = this.addLabelNamespaceSelects[labelId];
+        const namespace = namespaceTarget.value;
+        const dataNameTarget = this.addLabelDataNameSelects[labelId];
+        const dataName = dataNameTarget.value;
+        const list = update(ruleInfo.labels[labelIndex].matches, {
             $push: [{
-                type: 'query',
-                name: selectTarget.value,
+                id: uuidv1(),
+                namespace,
+                name: dataName,
                 value: ''
             }]
         });
@@ -189,52 +198,51 @@ class RuleInfo extends React.Component {
             ruleId: ruleInfo.id,
             labelIndex,
             label: {
-                [attr]: list
+                matches: list
             }
         });
 
-        selectTarget.value = '';
+        namespaceTarget.value = '';
+        this.selectNamespace({labelId});
     }
 
-    removeLabelAttrList({labelIndex, attr, listIndex}) {
+    removeLabelDataList({labelIndex, listIndex}) {
         const {ruleInfo, updateRuleLabelAction} = this.props;
-        const list = update(ruleInfo.labels[labelIndex][attr], {
+        const matches = update(ruleInfo.labels[labelIndex].matches, {
             $splice: [[listIndex, 1]]
         });
 
         updateRuleLabelAction({
             ruleId: ruleInfo.id,
             labelIndex,
-            label: {
-                [attr]: list
-            }
+            label: {matches}
         });
     }
 
-    updateLabelAttrList(target, {labelIndex, attr, path, listIndex}) {
+    updateLabelDataList(target, {labelIndex, listIndex}) {
         const {ruleInfo, updateRuleLabelAction} = this.props;
-        const listUpdate = {};
-
-        path.forEach((part, partIndex) => {
-            if (partIndex === path.length - 1) {
-                listUpdate[part] = {
+        const matches = update(ruleInfo.labels[labelIndex].matches, {
+            [listIndex]: {
+                value: {
                     $set: target.value
-                };
-            } else {
-                listUpdate[part] = {};
+                }
             }
-        });
-
-        const list = update(ruleInfo.labels[labelIndex][attr], {
-            [listIndex]: listUpdate
         });
 
         updateRuleLabelAction({
             ruleId: ruleInfo.id,
             labelIndex,
-            label: {
-                [attr]: list
-            }
+            label: {matches}
+        });
+    }
+
+    selectNamespace({labelId}) {
+        this.setState({
+            labelNamespace: update(this.state.labelNamespace, {
+                [labelId]: {
+                    $set: this.addLabelNamespaceSelects[labelId].value
+                }
+            })
         });
     }
 
@@ -268,7 +276,7 @@ class RuleInfo extends React.Component {
                 <ul className='section-list'>
                     {ruleInfo.filters.map((filter, filterIndex) => {
                         return (
-                            <li className='section-flex-row' key={filterIndex}>
+                            <li className='section-flex-row' key={filter.id}>
                                 <SimpleButton className='section-button diver-button' handleClick={this.removeFilter} params={{filterIndex}}>-</SimpleButton>
                                 <h5 className='filter-name'>{filter.name}</h5>
                                 <FilterValue candidates={trafficFilters[filter.name]} value={filter.value} onChange={this.onFilterValueChange} onChangeParams={{changeTarget: 'value', filterIndex}}/>
@@ -295,39 +303,48 @@ class RuleInfo extends React.Component {
     renderLabels() {
         const {ruleInfo, trafficGroup} = this.props;
 
-        if (trafficGroup.query.length === 0) {
-            return null;
-        }
-
         return (
             <div className='labels section'>
                 <h4 className='section-header'>Labels</h4>
                 <ul className='section-list'>
                     {ruleInfo.labels.map((label, labelIndex) => {
+                        const labelId = label.id;
+                        const labelNamespace = this.state.labelNamespace[labelId] || '';
+                        const dataKeys = trafficGroup.dataKeys[labelNamespace] || [];
+
                         return (
-                            <li className='label-item' key={labelIndex}>
+                            <li className='label-item' key={labelId}>
                                 <div className='section-flex-row label-row'>
                                     <SimpleButton className='section-button diver-button' handleClick={this.removeLabel} params={{labelIndex}}>-</SimpleButton>
                                     <div className='section-label label-label'>Label</div>
                                     <SimpleInput className='section-input' type='text' defaultValue={label.name || ''} handleInput={this.updateLabelAttr} params={{labelIndex, attr: 'name'}} placeholder='Label'/>
                                 </div>
-                                {label.matches.map(({name, value}, matchIndex) => {
+                                {label.matches.map(({id, name, value, namespace}, listIndex) => {
                                     return (
-                                        <div className='section-flex-row' key={matchIndex}>
-                                            <SimpleButton className='section-button diver-button' handleClick={this.removeLabelAttrList} params={{labelIndex, attr: 'matches', listIndex: matchIndex}}>-</SimpleButton>
-                                            <div className='section-label'>{name}</div>
-                                            <SimpleInput className='section-input' type='text' defaultValue={value || ''} handleInput={this.updateLabelAttrList} params={{labelIndex, attr: 'matches', path: ['value'], listIndex: matchIndex}} placeholder='value'/>
+                                        <div className='section-flex-row' key={id}>
+                                            <SimpleButton className='section-button diver-button' handleClick={this.removeLabelDataList} params={{labelIndex, listIndex}}>-</SimpleButton>
+                                            <div className='section-label'>{getProcessorName(namespace)} - {name}</div>
+                                            <SimpleInput className='section-input' type='text' defaultValue={value || ''} handleInput={this.updateLabelDataList} params={{labelIndex, listIndex}} placeholder='value'/>
                                         </div>
                                     );
                                 })}
                                 <div className='section-flex-row'>
-                                    <SimpleButton className='section-button diver-button' handleClick={this.addLabelAttrList} params={{labelIndex, attr: 'matches', targetKey: 'addLabelMatchSelects'}}>+</SimpleButton>
-                                    <select className='section-select buttoned' ref={(select) => {set(this, ['addLabelMatchSelects', ruleInfo.id, labelIndex], select);}}>
-                                        <option value=''>&#8213; Query &#8213;</option>
-                                        {trafficGroup.query.map((name, queryIndex) => {
-                                            return <option value={name} key={queryIndex}>{name}</option>;
+                                    <SimpleButton className='section-button diver-button' handleClick={this.addLabelDataList} params={{labelIndex}}>+</SimpleButton>
+                                    <SimpleSelect className='section-select namespace-select' selectRef={(select) => {set(this, ['addLabelNamespaceSelects', labelId], select);}} handleChange={this.selectNamespace} params={{labelId}}>
+                                        <option value=''>&#8213; Data &#8213;</option>
+                                        {ruleInfo.namespaces.map((namespace) => {
+                                            return <option value={namespace} key={namespace}>{getProcessorName(namespace)}</option>;
                                         })}
-                                    </select>
+                                    </SimpleSelect>
+                                    {
+                                        dataKeys.length > 0 ?
+                                            <select className='section-select data-name-select' ref={(select) => {set(this, ['addLabelDataNameSelects', labelId], select);}} key={labelNamespace}>
+                                                <option value=''>&#8213; Name &#8213;</option>
+                                                {dataKeys.map((name) => {
+                                                    return <option value={name} key={name}>{name}</option>;
+                                                })}
+                                            </select> : null
+                                    }
                                 </div>
                             </li>
                         );
@@ -341,27 +358,28 @@ class RuleInfo extends React.Component {
         );
     }
 
-    renderQueryData() {
+    renderData(namespace) {
         const {ruleInfo, trafficGroup} = this.props;
-        const queryData = ruleInfo.data.query;
+        const data = ruleInfo.data[namespace];
+        const dataKeys = trafficGroup.dataKeys[namespace];
 
-        if (trafficGroup.query.length === 0) {
+        if (dataKeys.length === 0) {
             return null;
         }
 
         return (
-            <div className='query section'>
-                <h4 className='section-header'>Data - Query</h4>
+            <div className='data section' key={namespace}>
+                <h4 className='section-header'>Data - {getProcessorName(namespace)}</h4>
                 <ul className='section-list'>
-                    {trafficGroup.query.map((name) => {
-                        const ruleQuery = queryData[name] || {};
-                        const querySelected = getRuleDataIndex(ruleInfo, 'query', name) >= 0;
+                    {dataKeys.map((name) => {
+                        const dataMeta = data[name] || {};
+                        const dataSelected = getRuleDataIndex(ruleInfo, namespace, name) >= 0;
 
                         return (
                             <li className='section-flex-row' key={name}>
-                                <SimpleInput className='diver-check' type='checkbox' defaultChecked={querySelected} handleChange={this.toggleQueryData} params={{name}}/>
+                                <SimpleInput className='diver-check' type='checkbox' defaultChecked={dataSelected} handleChange={this.toggleData} params={{name, namespace}}/>
                                 <h5 className='section-label'>{name}</h5>
-                                {querySelected ? <SimpleInput className='section-input' type='text' defaultValue={ruleQuery.desc || ''} handleInput={this.updateQueryDesc} params={{name}} placeholder='Alt name'/> : null}
+                                {dataSelected ? <SimpleInput className='section-input' type='text' defaultValue={dataMeta.desc || ''} handleInput={this.updateDataDesc} params={{name, namespace}} placeholder='Alt name'/> : null}
                             </li>
                         );
                     })}
@@ -372,6 +390,7 @@ class RuleInfo extends React.Component {
 
     render() {
         const {editingRuleName} = this.state;
+        const {ruleInfo} = this.props;
 
         return (
             <div>
@@ -384,7 +403,9 @@ class RuleInfo extends React.Component {
                     {editingRuleName ? this.renderEditRuleName() : this.renderRuleName()}
                     {this.renderFilters()}
                     {this.renderLabels()}
-                    {this.renderQueryData()}
+                    {ruleInfo.namespaces.map((namespace) => {
+                        return this.renderData(namespace);
+                    })}
                 </div>
             </div>
         );

@@ -221,7 +221,7 @@ body {
             box-sizing: border-box;
             max-width: 100%;
 
-            .buttoned {
+            &.buttoned {
                 max-width: calc(100% - 25px);
             }
         }
@@ -336,6 +336,17 @@ body {
         .label-label {
             font-weight: bold;
         }
+
+        .namespace-select {
+            margin-right: 5px;
+            flex: 1 1 100%;
+            max-width: calc((100% - 30px) / 2);
+        }
+
+        .data-name-select {
+            flex: 1 1 100%;
+            max-width: calc((100% - 30px) / 2);
+        }
     }
 }
 
@@ -348,17 +359,17 @@ body {
         word-break: break-all;
     }
 
-    .section-label.query-label {
+    .section-label.data-name-label {
         font-weight: bold;
     }
 
-    .section-label.query-value-label {
+    .section-label.data-value-label {
         height: auto;
         flex: 1 1 100%;
         word-break: break-all;
     }
 
-    .query-select {
+    .rule-select {
         margin-bottom: 5px;
     }
 

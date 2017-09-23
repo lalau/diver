@@ -6,28 +6,28 @@ import classnames from 'classnames';
 import SimpleInput from './partials/SimpleInput.jsx';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
 import updateRuleDataActionCreator from '../actions/update-rule-data-action-creator';
-import {getRuleDataIndex, getTrafficLabel} from '../lib/util';
+import {getProcessorName, getRuleDataIndex, getTrafficLabel} from '../lib/util';
 
 class TrafficInfo extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            selectedDataRuleId: this.getFirstMatchingRuleId(),
+            selectedRuleId: this.getFirstMatchingRuleId(),
             urlExpanded: false
         };
         this.collapseUrl = this.toggleUrlExpand.bind(this, false);
         this.deselectTraffic = this.deselectTraffic.bind(this);
         this.expandUrl = this.toggleUrlExpand.bind(this, true);
-        this.selectDataRuleId = this.selectDataRuleId.bind(this);
-        this.toggleQueryData = this.toggleQueryData.bind(this);
+        this.selectRuleId = this.selectRuleId.bind(this);
+        this.toggleData = this.toggleData.bind(this);
     }
 
     componentWillReceiveProps(nextProps) {
-        if (!this.state.selectedDataRuleId && this.props.ruleIds !== nextProps.ruleIds) {
-            const selectedDataRuleId = this.getFirstMatchingRuleId(nextProps);
-            if (selectedDataRuleId) {
-                this.setState({selectedDataRuleId});
+        if (!this.state.selectedRuleId && this.props.ruleIds !== nextProps.ruleIds) {
+            const selectedRuleId = this.getFirstMatchingRuleId(nextProps);
+            if (selectedRuleId) {
+                this.setState({selectedRuleId});
             }
         }
     }
@@ -40,22 +40,22 @@ class TrafficInfo extends React.Component {
         this.setState({urlExpanded});
     }
 
-    toggleQueryData(target, params) {
+    toggleData(target, params) {
         const {updateRuleDataAction} = this.props;
-        const {name, ruleId} = params;
+        const {name, namespace, ruleId} = params;
         const updateType = target.checked ? 'add' : 'remove';
 
         updateRuleDataAction({
             ruleId,
             updateType,
-            type: 'query',
+            namespace,
             name
         });
     }
 
-    selectDataRuleId() {
+    selectRuleId() {
         this.setState({
-            selectedDataRuleId: this.dataRuleIdInput.value
+            selectedRuleId: this.ruleIdInput.value
         });
     }
 
@@ -118,18 +118,18 @@ class TrafficInfo extends React.Component {
         );
     }
 
-    renderData() {
+    renderRules() {
         const {ruleIds, ruleInfos} = this.props;
-        const {selectedDataRuleId} = this.state;
+        const {selectedRuleId} = this.state;
 
-        if (!selectedDataRuleId) {
+        if (!selectedRuleId) {
             return null;
         }
 
         return (
-            <div className='section' key={selectedDataRuleId}>
-                <h4 className='section-header'>Data</h4>
-                <select className='section-select query-select' defaultValue={selectedDataRuleId} onChange={this.selectDataRuleId} ref={(input) => {this.dataRuleIdInput = input;}}>
+            <div className='section'>
+                <h4 className='section-header'>Rule</h4>
+                <select className='section-select rule-select' defaultValue={selectedRuleId} onChange={this.selectRuleId} ref={(input) => {this.ruleIdInput = input;}}>
                     {ruleIds.map((ruleId, ruleIndex) => {
                         const ruleInfo = ruleInfos[ruleId];
 
@@ -140,30 +140,51 @@ class TrafficInfo extends React.Component {
                         }
                     })}
                 </select>
-                {this.renderQuery(ruleInfos[selectedDataRuleId])}
             </div>
         );
     }
 
-    renderQuery(ruleInfo) {
-        const {trafficInfo} = this.props;
-        const parsedQuery = trafficInfo.parsed.query;
-        const sortedQueryNames = Object.keys(parsedQuery).sort();
+    renderData() {
+        const {ruleInfos, trafficInfo} = this.props;
+        const {selectedRuleId} = this.state;
+        const ruleInfo = ruleInfos[selectedRuleId];
+
+        if (!ruleInfo) {
+            return null;
+        }
 
         return (
-            <ul className='section-list'>
-                {sortedQueryNames.map((name) => {
-                    const querySelected = getRuleDataIndex(ruleInfo, 'query', name) >= 0;
+            <div key={selectedRuleId}>
+                {ruleInfos[selectedRuleId].namespaces.map((namespace) => {
+                    const processedData = trafficInfo.processed[namespace];
+                    const sortedNames = processedData && Object.keys(processedData).sort();
+
+                    if (!sortedNames || sortedNames.length === 0) {
+                        return null;
+                    }
 
                     return (
-                        <li className='section-flex-row' key={name}>
-                            <SimpleInput className='diver-check' type='checkbox' defaultChecked={querySelected} handleChange={this.toggleQueryData} params={{name, ruleId: ruleInfo.id}}/>
-                            <h5 className='section-label query-label'>{name}</h5>
-                            <div className='section-label query-value-label'>{parsedQuery[name]}</div>
-                        </li>
+                        <div className='section' key={namespace}>
+                            <div className='section'>
+                                <h4 className='section-header'>Data - {getProcessorName(namespace)}</h4>
+                                <ul className='section-list'>
+                                    {sortedNames.map((name) => {
+                                        const selected = getRuleDataIndex(ruleInfo, namespace, name) >= 0;
+
+                                        return (
+                                            <li className='section-flex-row' key={name}>
+                                                <SimpleInput className='diver-check' type='checkbox' defaultChecked={selected} handleChange={this.toggleData} params={{name, namespace, ruleId: ruleInfo.id}}/>
+                                                <h5 className='section-label data-name-label'>{name}</h5>
+                                                <div className='section-label data-value-label'>{processedData[name]}</div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        </div>
                     );
                 })}
-            </ul>
+            </div>
         );
     }
 
@@ -182,6 +203,7 @@ class TrafficInfo extends React.Component {
                 <div className='traffic-info info-pane-content'>
                     {this.renderUrl()}
                     {this.renderLabels()}
+                    {this.renderRules()}
                     {this.renderData()}
                 </div>
             </div>

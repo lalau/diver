@@ -10,6 +10,10 @@ import reducer from '../../src/reducers/';
 
 const store = createStore(reducer, {});
 
+window.diver = {
+    processors: {}
+};
+
 chrome.storage.sync.get('diverRules', ({diverRules}) => {
     if (diverRules) {
         store.dispatch({
@@ -27,6 +31,7 @@ chrome.devtools.network.onRequestFinished.addListener((traffic) => {
     store.dispatch({
         type: 'NEW_TRAFFIC',
         payload: {
+            processors: window.diver.processors,
             rules: state.rules,
             traffic
         }
@@ -62,6 +67,13 @@ store.subscribe(() => {
             }
         });
     }
+});
+
+Object.keys(store.getState().app.processors).forEach((key) => {
+    const processorUrl = store.getState().app.processors[key];
+    const script = document.createElement('script');
+    script.setAttribute('src', processorUrl);
+    document.head.appendChild(script);
 });
 
 render(

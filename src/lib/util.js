@@ -2,12 +2,12 @@ import get from 'lodash/get';
 
 export const isMatchingTraffic = (trafficInfo, ruleInfo) => {
     return ruleInfo.filters.length > 0 && ruleInfo.filters.every(({name, value}) => {
-        if (!value) {
+        if (!value && ruleInfo.filters.length > 1) {
             return true;
         }
 
         if (name === 'domain') {
-            return testStr(trafficInfo.parsed.hostname, value);
+            return testStr(trafficInfo.hostname, value);
         } else if (name ==='method') {
             return testStr(trafficInfo.traffic.request.method, value);
         } else if (name === 'mime-type') {
@@ -85,7 +85,13 @@ export const testStr = (str, rule) => {
         return false;
     }
 
-    if (rule.includes('*')) {
+    if (rule.indexOf('regex:') === 0) {
+        try {
+            return new RegExp(rule.replace('regex:', ''), 'i').test(str);
+        } catch (e) {
+            return false;
+        }
+    } else if (rule.includes('*')) {
         return new RegExp('^' + rule.split('*').join('.*') + '$', 'i').test(str);
     } else {
         return str.toLowerCase() === rule.toLowerCase();
@@ -111,9 +117,9 @@ export const getWidthOfTableText = (txt) => {
     return getWidthOfTableText.ctx.measureText(txt).width;
 };
 
-export const getRuleDataIndex = (ruleInfo, type, name) => {
+export const getRuleDataIndex = (ruleInfo, namespace, name) => {
     return ruleInfo.dataOrder.findIndex((orderItem) => {
-        return orderItem.type === type && orderItem.name === name;
+        return orderItem.namespace === namespace && orderItem.name === name;
     });
 };
 
@@ -121,11 +127,15 @@ export const getTrafficLabel = (trafficInfo, labels) => {
     let label = '';
 
     labels.some(({name, matches}) => {
-        if (matches.length > 0 && matches.every(({type, name, value}) => { return testStr(trafficInfo.parsed[type][name], value); })) {
+        if (matches.length > 0 && matches.every(({namespace, name, value}) => { return testStr(trafficInfo.processed[namespace][name], value); })) {
             label = name;
             return true;
         }
     });
 
     return label;
+};
+
+export const getProcessorName = (namespace) => {
+    return get(window, ['diver', 'processors', namespace, 'name']) || namespace;
 };
