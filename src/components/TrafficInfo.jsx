@@ -6,7 +6,7 @@ import classnames from 'classnames';
 import SimpleInput from './partials/SimpleInput.jsx';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
 import updateRuleDataActionCreator from '../actions/update-rule-data-action-creator';
-import {getProcessorName, getRuleDataIndex, getTrafficLabel} from '../lib/util';
+import {getRuleDataIndex, getTrafficLabel} from '../lib/util';
 
 class TrafficInfo extends React.Component {
     constructor(props) {
@@ -145,7 +145,7 @@ class TrafficInfo extends React.Component {
     }
 
     renderData() {
-        const {ruleInfos, trafficInfo} = this.props;
+        const {processors, ruleInfos, trafficInfo} = this.props;
         const {selectedRuleId} = this.state;
         const ruleInfo = ruleInfos[selectedRuleId];
 
@@ -166,7 +166,7 @@ class TrafficInfo extends React.Component {
                     return (
                         <div className='section' key={namespace}>
                             <div className='section'>
-                                <h4 className='section-header'>Data - {getProcessorName(namespace)}</h4>
+                                <h4 className='section-header'>Data - {processors[namespace].name}</h4>
                                 <ul className='section-list'>
                                     {sortedNames.map((name) => {
                                         const selected = getRuleDataIndex(ruleInfo, namespace, name) >= 0;
@@ -212,6 +212,7 @@ class TrafficInfo extends React.Component {
 }
 
 TrafficInfo.propTypes = {
+    processors: PropTypes.object,
     ruleIds: PropTypes.array,
     ruleInfos: PropTypes.object,
     trafficGroups: PropTypes.object,
@@ -220,6 +221,7 @@ TrafficInfo.propTypes = {
 
 const mapStateToProps = (state) => {
     return {
+        processors: state.app.state.app.processors,
         ruleIds: state.rules.ruleIds,
         ruleInfos: state.rules.ruleInfos,
         trafficGroups: state.traffics.trafficGroups,

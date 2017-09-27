@@ -7,12 +7,77 @@ import {createStore} from 'redux';
 import {Provider} from 'react-redux';
 import App from '../../src/components/App.jsx';
 import reducer from '../../src/reducers/';
+import update from 'immutability-helper';
+
+window.diver = {};
 
 const store = createStore(reducer, {});
 
-window.diver = {
-    processors: {}
+const loadProcessors = () => {
+    const state = store.getState();
+    const processors = state.app.state.app.processors;
+
+    window.diver.processors = {};
+
+    const loadPromises = Object.keys(processors).map((namespace) => {
+        const {name, url} = processors[namespace];
+
+        if (name) {
+            return null;
+        }
+
+        return new window.Promise((resolve) => {
+            const script = document.createElement('script');
+            script.setAttribute('src', url);
+            script.onload = script.onerror = resolve;
+            document.head.appendChild(script);
+        });
+    });
+
+    window.Promise.all(loadPromises).then(() => {
+        const processorsUpdate = {};
+
+        Object.keys(processors).map((namespace) => {
+            const processor = window.diver.processors[namespace];
+
+            if (processor && processor.name && processor.namespace === namespace && processor.process) {
+                processor.url = processors[namespace].url;
+                processorsUpdate[namespace] = {
+                    $set: processor
+                };
+            }
+        });
+
+        if (Object.keys(processorsUpdate).length > 0) {
+            store.dispatch({
+                type: 'UPDATE_APP_STATE',
+                payload: {
+                    scope: 'app',
+                    key: 'processors',
+                    value: update(processors, processorsUpdate)
+                }
+            });
+        }
+
+        store.dispatch({
+            type: 'UPDATE_APP_STATE',
+            payload: {
+                scope: 'page',
+                key: 'processorsUpdated',
+                value: false
+            }
+        });
+    });
 };
+
+loadProcessors();
+
+store.dispatch({
+    type: 'INIT',
+    payload: {
+        rules: store.getState().rules
+    }
+});
 
 chrome.storage.sync.get('diverRules', ({diverRules}) => {
     if (diverRules) {
@@ -31,7 +96,7 @@ chrome.devtools.network.onRequestFinished.addListener((traffic) => {
     store.dispatch({
         type: 'NEW_TRAFFIC',
         payload: {
-            processors: window.diver.processors,
+            processors: state.app.state.app.processors,
             rules: state.rules,
             traffic
         }
@@ -39,41 +104,58 @@ chrome.devtools.network.onRequestFinished.addListener((traffic) => {
 });
 
 chrome.devtools.network.onNavigated.addListener(() => {
+    const state = store.getState();
+
     store.dispatch({
-        type: 'NAVIGATE'
+        type: 'INIT',
+        payload: {
+            rules: state.rules
+        }
     });
 });
 
 const storeState = {
-    rules: {},
-    traffics: {}
+    app: {},
+    rules: {}
 };
 
 store.subscribe(() => {
     const newState = store.getState();
+    const prevRules = storeState.rules;
+    const nextRules = newState.rules;
 
-    if (newState.rules !== storeState.rules) {
-        chrome.storage.sync.set({'diverRules': newState.rules});
+    storeState.rules = newState.rules;
+
+    if (prevRules !== nextRules) {
+        chrome.storage.sync.set({'diverRules': nextRules});
     }
 
-    if (newState.rules.ruleInfos !== storeState.rules.ruleInfos || newState.traffics.trafficInfos !== storeState.traffics.trafficInfos) {
-        storeState.rules = newState.rules;
-        storeState.traffics = newState.traffics;
+    nextRules.ruleIds.forEach((nextRuleId) => {
+        const nextRuleInfo = nextRules.ruleInfos[nextRuleId];
+        const prevRuleInfo = prevRules && prevRules.ruleInfos && prevRules.ruleInfos[nextRuleId];
 
-        store.dispatch({
-            type: 'PROCESS_TRAFFICS',
-            payload: {
-                rules: newState.rules
-            }
-        });
+        // only re-process rule if the rule change is not due to adding/removing processor
+        if (!prevRuleInfo && nextRuleInfo || (nextRuleInfo !== prevRuleInfo && nextRuleInfo.namespaces === prevRuleInfo.namespaces)) {
+            store.dispatch({
+                type: 'PROCESS_RULE',
+                payload: {
+                    ruleInfo: nextRuleInfo
+                }
+            });
+        }
+    });
+
+    const prevState = storeState.app.state;
+    const nextState = newState.app.state;
+
+    storeState.app = newState.app;
+
+    if (!(prevState && prevState.page && prevState.page.processorsUpdated) && nextState.page.processorsUpdated) {
+        loadProcessors();
     }
-});
 
-Object.keys(store.getState().app.processors).forEach((key) => {
-    const processorUrl = store.getState().app.processors[key];
-    const script = document.createElement('script');
-    script.setAttribute('src', processorUrl);
-    document.head.appendChild(script);
+    // set window.diver.processors to null
+    // avoid referencing window.diver.processors in jsx
 });
 
 render(

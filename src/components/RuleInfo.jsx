@@ -5,10 +5,13 @@ import {bindActionCreators} from 'redux';
 import FilterValue from './partials/FilterValue.jsx';
 import addRuleFilterActionCreator from '../actions/add-rule-filter-action-creator';
 import addRuleLabelActionCreator from '../actions/add-rule-label-action-creator';
+import addRuleProcessorActionCreator from '../actions/add-rule-processor-action-creator';
 import removeRuleActionCreator from '../actions/remove-rule-action-creator';
 import removeRuleFilterActionCreator from '../actions/remove-rule-filter-action-creator';
 import removeRuleLabelActionCreator from '../actions/remove-rule-label-action-creator';
+import removeRuleProcessorActionCreator from '../actions/remove-rule-processor-action-creator';
 import selectRuleActionCreator from '../actions/select-rule-action-creator';
+import updateAppStateActionCreator from '../actions/update-app-state-action-creator';
 import updateRuleActionCreator from '../actions/update-rule-action-creator';
 import updateRuleDataActionCreator from '../actions/update-rule-data-action-creator';
 import updateRuleFilterActionCreator from '../actions/update-rule-filter-action-creator';
@@ -16,7 +19,7 @@ import updateRuleLabelActionCreator from '../actions/update-rule-label-action-cr
 import SimpleButton from './partials/SimpleButton.jsx';
 import SimpleInput from './partials/SimpleInput.jsx';
 import SimpleSelect from './partials/SimpleSelect.jsx';
-import {getProcessorName, getRuleDataIndex} from '../lib/util';
+import {getRuleDataIndex} from '../lib/util';
 import set from 'lodash/set';
 import update from 'immutability-helper';
 import uuidv1 from 'uuid/v1';
@@ -32,11 +35,13 @@ class RuleInfo extends React.Component {
         this.addFilter = this.addFilter.bind(this);
         this.addLabel = this.addLabel.bind(this);
         this.addLabelDataList = this.addLabelDataList.bind(this);
+        this.addProcessor = this.addProcessor.bind(this);
         this.deselectRule = this.deselectRule.bind(this);
         this.onFilterValueChange = this.onFilterValueChange.bind(this);
         this.removeFilter = this.removeFilter.bind(this);
         this.removeLabel = this.removeLabel.bind(this);
         this.removeLabelDataList = this.removeLabelDataList.bind(this);
+        this.removeProcessor = this.removeProcessor.bind(this);
         this.removeRule = this.removeRule.bind(this);
         this.selectNamespace = this.selectNamespace.bind(this);
         this.toggleEditRuleName = this.toggleEditRuleName.bind(this);
@@ -51,6 +56,43 @@ class RuleInfo extends React.Component {
         if (!prevState.editingRuleName && this.state.editingRuleName && this.ruleNameInput) {
             this.ruleNameInput.focus();
         }
+    }
+
+    addProcessor() {
+        const {addRuleProcessorAction, ruleInfo} = this.props;
+        const namespace = this.addProcessorSelect.value;
+
+        if (!namespace) {
+            return;
+        }
+
+        addRuleProcessorAction({
+            ruleId: ruleInfo.id,
+            namespace
+        });
+        this.showReloadMessage();
+        this.addProcessorSelect.value = '';
+    }
+
+    removeProcessor({namespace}) {
+        const {removeRuleProcessorAction, ruleInfo} = this.props;
+
+        removeRuleProcessorAction({
+            ruleId: ruleInfo.id,
+            namespace
+        });
+        this.showReloadMessage();
+    }
+
+    showReloadMessage() {
+        this.props.updateAppStateAction({
+            scope: 'page',
+            key: 'message',
+            value: {
+                type: 'warning',
+                key: 'RELOAD_FOR_PROCESSORS'
+            }
+        });
     }
 
     deselectRule() {
@@ -185,6 +227,11 @@ class RuleInfo extends React.Component {
         const namespace = namespaceTarget.value;
         const dataNameTarget = this.addLabelDataNameSelects[labelId];
         const dataName = dataNameTarget.value;
+
+        if (!namespace || !dataName) {
+            return;
+        }
+
         const list = update(ruleInfo.labels[labelIndex].matches, {
             $push: [{
                 id: uuidv1(),
@@ -285,7 +332,7 @@ class RuleInfo extends React.Component {
                     })}
                 </ul>
                 <div className='section-flex-row'>
-                    <SimpleButton className='section-button diver-button' handleClick={this.addFilter}>+</SimpleButton>
+                    <button className='section-button diver-button' onClick={this.addFilter}>+</button>
                     <select className='section-select buttoned' ref={(select) => {this.addFilterSelect = select;}}>
                         <option value=''>&#8213; Filter &#8213;</option>
                         <option value='domain'>domain</option>
@@ -300,8 +347,46 @@ class RuleInfo extends React.Component {
         );
     }
 
+    renderProcessors() {
+        const {ruleInfo, processors} = this.props;
+
+        return (
+            <div className='processors section'>
+                <h4 className='section-header'>Processors</h4>
+                <ul className='section-list'>
+                    {ruleInfo.namespaces.map((namespace) => {
+                        const processor = processors[namespace];
+                        const processorName = processor && processor.name;
+
+                        return (
+                            <li className='section-flex-row' key={namespace}>
+                                <SimpleButton className='section-button diver-button' handleClick={this.removeProcessor} params={{namespace}}>-</SimpleButton>
+                                {processorName ? <h5 className='section-label'>{processorName}</h5> : <h5 className='section-label ns-label'>{namespace}</h5>}
+                            </li>
+                        );
+                    })}
+                </ul>
+                <div className='section-flex-row'>
+                    <button className='section-button diver-button' onClick={this.addProcessor}>+</button>
+                    <select className='section-select buttoned' ref={(select) => {this.addProcessorSelect = select;}}>
+                        <option value=''>&#8213; Processors &#8213;</option>
+                        {Object.keys(processors).map((namespace) => {
+                            const {name} = processors[namespace];
+
+                            if (!name || ruleInfo.namespaces.indexOf(namespace) >= 0) {
+                                return null;
+                            }
+
+                            return <option value={namespace} key={namespace}>{name}</option>;
+                        })}
+                    </select>
+                </div>
+            </div>
+        );
+    }
+
     renderLabels() {
-        const {ruleInfo, trafficGroup} = this.props;
+        const {processors, ruleInfo, trafficGroup} = this.props;
 
         return (
             <div className='labels section'>
@@ -323,7 +408,7 @@ class RuleInfo extends React.Component {
                                     return (
                                         <div className='section-flex-row' key={id}>
                                             <SimpleButton className='section-button diver-button' handleClick={this.removeLabelDataList} params={{labelIndex, listIndex}}>-</SimpleButton>
-                                            <div className='section-label'>{getProcessorName(namespace)} - {name}</div>
+                                            <div className='section-label'>{processors[namespace].name} - {name}</div>
                                             <SimpleInput className='section-input' type='text' defaultValue={value || ''} handleInput={this.updateLabelDataList} params={{labelIndex, listIndex}} placeholder='value'/>
                                         </div>
                                     );
@@ -333,7 +418,12 @@ class RuleInfo extends React.Component {
                                     <SimpleSelect className='section-select namespace-select' selectRef={(select) => {set(this, ['addLabelNamespaceSelects', labelId], select);}} handleChange={this.selectNamespace} params={{labelId}}>
                                         <option value=''>&#8213; Data &#8213;</option>
                                         {ruleInfo.namespaces.map((namespace) => {
-                                            return <option value={namespace} key={namespace}>{getProcessorName(namespace)}</option>;
+                                            const dataKeys = trafficGroup.dataKeys[namespace];
+                                            if (dataKeys && dataKeys.length > 0) {
+                                                return <option value={namespace} key={namespace}>{processors[namespace].name}</option>;
+                                            } else {
+                                                return null;
+                                            }
                                         })}
                                     </SimpleSelect>
                                     {
@@ -351,7 +441,7 @@ class RuleInfo extends React.Component {
                     })}
                 </ul>
                 <div className='section-flex-row'>
-                    <SimpleButton className='section-button diver-button' handleClick={this.addLabel}>+</SimpleButton>
+                    <button className='section-button diver-button' onClick={this.addLabel}>+</button>
                     <input className='section-input' placeholder='Label' ref={(input) => {this.addLabelInput = input;}}/>
                 </div>
             </div>
@@ -359,17 +449,17 @@ class RuleInfo extends React.Component {
     }
 
     renderData(namespace) {
-        const {ruleInfo, trafficGroup} = this.props;
+        const {processors, ruleInfo, trafficGroup} = this.props;
         const data = ruleInfo.data[namespace];
         const dataKeys = trafficGroup.dataKeys[namespace];
 
-        if (dataKeys.length === 0) {
+        if (!dataKeys || dataKeys.length === 0) {
             return null;
         }
 
         return (
             <div className='data section' key={namespace}>
-                <h4 className='section-header'>Data - {getProcessorName(namespace)}</h4>
+                <h4 className='section-header'>Data - {processors[namespace].name}</h4>
                 <ul className='section-list'>
                     {dataKeys.map((name) => {
                         const dataMeta = data[name] || {};
@@ -402,6 +492,7 @@ class RuleInfo extends React.Component {
                 <div className='rule-info info-pane-content'>
                     {editingRuleName ? this.renderEditRuleName() : this.renderRuleName()}
                     {this.renderFilters()}
+                    {this.renderProcessors()}
                     {this.renderLabels()}
                     {ruleInfo.namespaces.map((namespace) => {
                         return this.renderData(namespace);
@@ -413,6 +504,7 @@ class RuleInfo extends React.Component {
 }
 
 RuleInfo.propTypes = {
+    processors: PropTypes.object,
     ruleInfo: PropTypes.object,
     selectedRuleId: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
     trafficFilters: PropTypes.object,
@@ -421,6 +513,7 @@ RuleInfo.propTypes = {
 
 const mapStateToProps = (state) => {
     return {
+        processors: state.app.state.app.processors,
         ruleInfo: state.rules.ruleInfos[state.app.selectedRuleId],
         selectedRuleId: state.app.selectedRuleId,
         trafficFilters: state.traffics.filters,
@@ -432,10 +525,13 @@ const mapDispatchToProps = (dispatch) => {
     return {
         addRuleFilterAction: bindActionCreators(addRuleFilterActionCreator, dispatch),
         addRuleLabelAction: bindActionCreators(addRuleLabelActionCreator, dispatch),
+        addRuleProcessorAction: bindActionCreators(addRuleProcessorActionCreator, dispatch),
         removeRuleAction: bindActionCreators(removeRuleActionCreator, dispatch),
         removeRuleFilterAction: bindActionCreators(removeRuleFilterActionCreator, dispatch),
         removeRuleLabelAction: bindActionCreators(removeRuleLabelActionCreator, dispatch),
+        removeRuleProcessorAction: bindActionCreators(removeRuleProcessorActionCreator, dispatch),
         selectRuleAction: bindActionCreators(selectRuleActionCreator, dispatch),
+        updateAppStateAction: bindActionCreators(updateAppStateActionCreator, dispatch),
         updateRuleAction: bindActionCreators(updateRuleActionCreator, dispatch),
         updateRuleDataAction: bindActionCreators(updateRuleDataActionCreator, dispatch),
         updateRuleFilterAction: bindActionCreators(updateRuleFilterActionCreator, dispatch),

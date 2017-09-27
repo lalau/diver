@@ -66,16 +66,22 @@ export default (state, {type, payload}) => {
         return addRuleFilter(state, payload);
     case 'ADD_RULE_LABEL':
         return addRuleLabel(state, payload);
+    case 'ADD_RULE_PROCESSOR':
+        return addRuleProcessor(state, payload);
     case 'IMPORT_RULES':
         return importRules(state, payload);
     case 'NEW_TRAFFIC_RULE':
         return newTrafficRule(state, payload);
+    case 'REMOVE_PROCESSOR':
+        return removeProcessor(state, payload);
     case 'REMOVE_RULE':
         return removeRule(state, payload);
     case 'REMOVE_RULE_FILTER':
         return removeRuleFilter(state, payload);
     case 'REMOVE_RULE_LABEL':
         return removeRuleLabel(state, payload);
+    case 'REMOVE_RULE_PROCESSOR':
+        return removeRuleProcessor(state, payload);
     case 'REORDER_RULE_DATA':
         return reorderRuleData(state, payload);
     case 'UPDATE_RULE_LABEL':
@@ -89,6 +95,72 @@ export default (state, {type, payload}) => {
     default:
         return state || DEFAULT_STATE;
     }
+};
+
+const addRuleProcessor = (state, {ruleId, namespace}) => {
+    const ruleInfo = state.ruleInfos[ruleId];
+
+    if (ruleInfo.namespaces.indexOf(namespace) >= 0) {
+        return state;
+    }
+
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                data: {
+                    [namespace]: {
+                        $set: {}
+                    }
+                },
+                namespaces: {
+                    $push: [namespace]
+                }
+            }
+        }
+    });
+};
+
+const removeRuleProcessor = (state, {ruleId, namespace}) => {
+    const ruleInfo = state.ruleInfos[ruleId];
+
+    if (ruleInfo.namespaces.indexOf(namespace) === -1) {
+        return state;
+    }
+
+    return update(state, {
+        ruleInfos: {
+            [ruleId]: {
+                data: {
+                    $unset: [namespace]
+                },
+                dataOrder: {
+                    $set: ruleInfo.dataOrder.filter((dataOrderItem) => {
+                        return dataOrderItem.namespace !== namespace;
+                    })
+                },
+                namespaces: {
+                    $splice: [[ruleInfo.namespaces.indexOf(namespace), 1]]
+                },
+                labels: ruleInfo.labels.map(({matches}) => {
+                    return matches.every(match => match.namespace !== namespace) ? {} : {
+                        matches: {
+                            $set: matches.filter(match => match.namespace !== namespace)
+                        }
+                    };
+                })
+            }
+        }
+    });
+};
+
+const removeProcessor = (state, {namespace}) => {
+    const {ruleIds} = state;
+
+    ruleIds.forEach((ruleId) => {
+        state = removeRuleProcessor(state, {ruleId, namespace});
+    });
+
+    return state;
 };
 
 const importRules = (state, {rules}) => {
@@ -291,12 +363,11 @@ const createRule = (id, trafficInfo) => {
             }
         ],
         data: {
-            query: {},
-            rapid: {}
+            query: {}
         },
         dataOrder: [],
         labels: [],
-        namespaces: ['query', 'rapid']
+        namespaces: ['query']
     };
 };
 

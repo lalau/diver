@@ -1,46 +1,91 @@
 import update from 'immutability-helper';
 
 const DEFAULT_STATE = {
-    processors: {
-        query: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.3/query.js',
-        rapid: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.3/rapid.js'
-    },
     selectedRuleId: null,
     selectedTrafficIndex: null,
-    ui: {}
+    state: {
+        app: {
+            processors: {
+                query: {
+                    url: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.3/query.js'
+                }
+            }
+        },
+        page: {}
+    }
 };
 
 /*
 {
-    processors: {
-        query: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.1/query.js'
-    },
     selectedRuleId: uuid,
     selectedTrafficIndex: 3,
-    ui: {}
+    state: {
+        app: <persistent state>,
+        page: <state reset on navigate>
+    }
 }
 */
 
 export default (state, {type, payload}) => {
     switch (type) {
-    case 'NAVIGATE':
-        return handleNavigate(state, payload);
+    case 'INIT':
+        return init(state, payload);
+    case 'REMOVE_PROCESSOR':
+        return removeProcessor(state, payload);
     case 'SELECT_RULE':
         return selectRule(state, payload);
     case 'SELECT_TRAFFIC':
         return selectTraffic(state, payload);
+    case 'UPDATE_PROCESSOR':
+        return updateProcessor(state, payload);
+    case 'UPDATE_APP_STATE':
+        return updateAppState(state, payload);
     default:
         return state || DEFAULT_STATE;
     }
 };
 
-const handleNavigate = (state) => {
+const init = (state) => {
     return update(state, {
         selectedRuleId: {
             $set: null
         },
         selectedTrafficIndex: {
             $set: null
+        },
+        state: {
+            page: {
+                $set: {}
+            }
+        }
+    });
+};
+
+const updateAppState = (state, {scope, key, value}) => {
+    return update(state, {
+        state: {
+            [scope]: {
+                [key]: {
+                    $set: value
+                }
+            }
+        }
+    });
+};
+
+const removeProcessor = (state, {namespace}) => {
+    return update(state, {
+        state: {
+            app: {
+                processors: {
+                    $unset: [namespace]
+                }
+            },
+            page: {
+                processorsUpdated: {
+                    $set: true
+                }
+            }
         }
     });
 };
@@ -63,6 +108,25 @@ const selectTraffic = (state, {trafficIndex}) => {
         },
         selectedTrafficIndex: {
             $set: trafficIndex
+        }
+    });
+};
+
+const updateProcessor = (state, {namespace, url}) => {
+    return update(state, {
+        state: {
+            app: {
+                processors: {
+                    [namespace]: {
+                        $set: {url}
+                    }
+                }
+            },
+            page: {
+                processorsUpdated: {
+                    $set: true
+                }
+            }
         }
     });
 };

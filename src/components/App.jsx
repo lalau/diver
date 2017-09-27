@@ -6,6 +6,9 @@ import Traffics from './Traffics.jsx';
 import RawTraffics from './RawTraffics.jsx';
 import RuleInfo from './RuleInfo.jsx';
 import TrafficInfo from './TrafficInfo.jsx';
+import Rules from './Rules.jsx';
+import Processors from './Processors.jsx';
+import messages from '../strings/messages';
 
 class App extends React.Component {
     constructor(props) {
@@ -16,6 +19,7 @@ class App extends React.Component {
         };
         this.toggleRuleview = this.toggleView.bind(this, 'rule');
         this.toggleTrafficview = this.toggleView.bind(this, 'traffic');
+        this.toggleProcessorview = this.toggleView.bind(this, 'processor');
     }
 
     toggleView(view) {
@@ -41,21 +45,51 @@ class App extends React.Component {
 
     renderRuleView() {
         return (
-            <div className='rule-view'></div>
+            <div className='rule-view'>
+                <Rules/>
+            </div>
+        );
+    }
+
+    renderProcessorView() {
+        return (
+            <div className='processor-view'>
+                <Processors/>
+            </div>
+        );
+    }
+
+    renderMessageBar() {
+        const {message} = this.props;
+        const string = message && messages[message.key];
+
+        if (!string) {
+            return null;
+        }
+
+        return (
+            <div className='app-bar message-bar'>
+                <p className={classnames('message', message.type)}>&#8252; {string}</p>
+            </div>
         );
     }
 
     render() {
         const {view} = this.state;
+        const {message} = this.props;
+        const hasMessage = !!(message && messages[message.key]);
 
         return (
-            <div>
-                <div className='menu-bar'>
-                    <button className='menu-button' onClick={this.toggleTrafficview}>&#9783; Traffics</button>
-                    <button className='menu-button' onClick={this.toggleRuleview}>&#10040; Rules</button>
+            <div className={classnames('diver-app', {'message-bar-shown': hasMessage})}>
+                <div className='app-bar menu-bar'>
+                    <button className={classnames('menu-button', {'selected': view === 'traffic'})} onClick={this.toggleTrafficview}>&#9783; Traffics</button>
+                    <button className={classnames('menu-button', {'selected': view === 'rule'})} onClick={this.toggleRuleview}>&#10040; Rules</button>
+                    <button className={classnames('menu-button', {'selected': view === 'processor'})} onClick={this.toggleProcessorview}>&#10148; Processors</button>
                 </div>
+                {this.renderMessageBar()}
                 {view === 'traffic' ? this.renderTrafficView() : null}
                 {view === 'rule' ? this.renderRuleView() : null}
+                {view === 'processor' ? this.renderProcessorView() : null}
             </div>
         );
     }
@@ -69,7 +103,8 @@ App.propTypes = {
 const mapStateToProps = (state) => {
     return {
         selectedRuleId: state.app.selectedRuleId,
-        selectedTrafficIndex: state.app.selectedTrafficIndex
+        selectedTrafficIndex: state.app.selectedTrafficIndex,
+        message: state.app.state.page.message
     };
 };
 

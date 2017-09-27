@@ -135,7 +135,3 @@ export const getTrafficLabel = (trafficInfo, labels) => {
 
     return label;
 };
-
-export const getProcessorName = (namespace) => {
-    return get(window, ['diver', 'processors', namespace, 'name']) || namespace;
-};

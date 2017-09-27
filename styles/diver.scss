@@ -2,10 +2,41 @@ body {
     margin: 0;
 }
 
-.menu-bar {
+.diver-app {
+    padding-top: 25px;
+    height: 100vh;
+    box-sizing: border-box;
+
+    &.message-bar-shown {
+        padding-top: 50px;
+    }
+}
+
+.app-bar {
     background-color: #f3f3f3;
     border-bottom: 1px solid #ccc;
-    display: none;
+    position: fixed;
+    width: 100%;
+    height: 25px;
+    box-sizing: border-box;
+}
+
+.menu-bar {
+    top: 0;
+}
+
+.message-bar {
+    top: 25px;
+    padding: 0 10px;
+
+    .message {
+        margin: 0;
+        line-height: 25px;
+    }
+
+    .warning {
+        color: red;
+    }
 }
 
 .menu-button {
@@ -19,6 +50,10 @@ body {
     color: #5a5a5a;
     outline: none;
 
+    &.selected {
+        border-bottom: 2px solid cornflowerblue;
+    }
+
     &:hover {
         color: #333;
         background-color: #e5e5e5;
@@ -27,17 +62,16 @@ body {
 
 .traffic-view {
     position: relative;
+    height: 100%;
 
     .traffic-pane {
-        height: 100vh;
-        max-height: 100vh;
+        height: 100%;
         overflow-y: scroll;
     }
 
     .info-pane {
         position: absolute;
-        max-height: 100vh;
-        height: 100vh;
+        height: 100%;
         top: 0;
         right: 0;
         background-color: #ddd;
@@ -348,6 +382,12 @@ body {
             max-width: calc((100% - 30px) / 2);
         }
     }
+
+    .processors {
+        .ns-label {
+            color: red;
+        }
+    }
 }
 
 .traffic-info {
@@ -379,5 +419,85 @@ body {
         display: -webkit-box;
         -webkit-line-clamp: 20;
         -webkit-box-orient: vertical;
+    }
+}
+
+.rule-view {
+    padding: 20px;
+
+    .rule-config {
+        font-size: 14px;
+        font-family: inherit;
+        background-color: #dfdfdf;
+        padding: 20px;
+        margin: 0;
+        border: 1px solid #aaa;
+        overflow: auto;
+    }
+}
+
+.processor-view {
+    padding: 20px;
+
+    .processor-row {
+        display: flex;
+
+        .processor-button {
+            margin-left: 10px;
+        }
+    }
+
+    .processor-name {
+        margin: 20px 0 5px 0;
+    }
+
+    .warning {
+        color: red;
+        margin: 0;
+    }
+
+    .processor-ns {
+        margin: 5px 0;
+    }
+
+    .processor-url {
+        font-size: 14px;
+        font-family: sans-serif;
+        display: inline-block;
+        padding: 10px;
+        border: 1px solid #aaa;
+        box-sizing: border-box;
+        height: 40px;
+        flex: 1;
+
+        &:visited {
+            color: blue;
+        }
+    }
+
+    .processor-url-display {
+        background-color: #dfdfdf;
+    }
+
+    .processor-button {
+        border: 1px solid #777;
+        border-radius: 2px;
+        padding: 0 6px;
+        outline: none;
+        height: 40px;
+        line-height: 40px;
+        cursor: pointer;
+        font-size: 14px;
+        min-width: 70px;
+    }
+
+    .add-processor {
+        margin-top: 40px;
+    }
+
+    .add-processor-ns {
+        border: 1px solid #aaa;
+        padding: 0 10px;
+        font-size: inherit;
     }
 }
