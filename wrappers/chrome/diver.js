@@ -24,9 +24,9 @@ const loadProcessors = () => {
     window.diver.processors = {};
 
     const loadPromises = Object.keys(processors).map((namespace) => {
-        const {name, url} = processors[namespace];
+        const {name, process, url} = processors[namespace];
 
-        if (name) {
+        if (name && typeof process === 'function') {
             return null;
         }
 
