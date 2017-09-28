@@ -58,6 +58,10 @@ body {
         color: #333;
         background-color: #e5e5e5;
     }
+
+    &.reset-button {
+        float: right;
+    }
 }
 
 .traffic-view {
@@ -434,6 +438,27 @@ body {
         border: 1px solid #aaa;
         overflow: auto;
     }
+
+    .rule-header {
+        display: flex;
+    }
+
+    .rule-title {
+        flex: 1;
+    }
+
+    .rule-button {
+        margin: 10px 0;
+        border: 1px solid #777;
+        font-size: 14px;
+        padding: 6px;
+        background: #c0c0c0;
+        cursor: pointer;
+    }
+}
+
+#import-rule {
+    opacity: 0;
 }
 
 .processor-view {

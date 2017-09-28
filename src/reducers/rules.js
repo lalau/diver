@@ -68,6 +68,8 @@ export default (state, {type, payload}) => {
         return addRuleLabel(state, payload);
     case 'ADD_RULE_PROCESSOR':
         return addRuleProcessor(state, payload);
+    case 'IMPORT_RULE_INFO':
+        return importRuleInfo(state, payload);
     case 'IMPORT_RULES':
         return importRules(state, payload);
     case 'NEW_TRAFFIC_RULE':
@@ -84,6 +86,8 @@ export default (state, {type, payload}) => {
         return removeRuleProcessor(state, payload);
     case 'REORDER_RULE_DATA':
         return reorderRuleData(state, payload);
+    case 'RESET_RULES':
+        return DEFAULT_STATE;
     case 'UPDATE_RULE_LABEL':
         return updateRuleLabel(state, payload);
     case 'UPDATE_RULE_DATA':
@@ -161,6 +165,25 @@ const removeProcessor = (state, {namespace}) => {
     });
 
     return state;
+};
+
+const importRuleInfo = (state, {ruleInfo}) => {
+    const {ruleInfos} = state;
+
+    if (ruleInfos[ruleInfo.id]) {
+        ruleInfo.id = uuidv1();
+    }
+
+    return update(state, {
+        ruleInfos: {
+            [ruleInfo.id]: {
+                $set: ruleInfo
+            }
+        },
+        ruleIds: {
+            $push: [ruleInfo.id]
+        }
+    });
 };
 
 const importRules = (state, {rules}) => {

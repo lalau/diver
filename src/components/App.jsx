@@ -9,6 +9,8 @@ import TrafficInfo from './TrafficInfo.jsx';
 import Rules from './Rules.jsx';
 import Processors from './Processors.jsx';
 import messages from '../strings/messages';
+import {bindActionCreators} from 'redux';
+import resetRulesActionCreator from '../actions/reset-rules-action-creator';
 
 class App extends React.Component {
     constructor(props) {
@@ -17,9 +19,16 @@ class App extends React.Component {
         this.state = {
             view: 'traffic'
         };
+        this.resetRules = this.resetRules.bind(this);
         this.toggleRuleview = this.toggleView.bind(this, 'rule');
         this.toggleTrafficview = this.toggleView.bind(this, 'traffic');
         this.toggleProcessorview = this.toggleView.bind(this, 'processor');
+    }
+
+    resetRules() {
+        if (window.confirm('Only reset rules if the extension is breaking. Proceed?')) {
+            this.props.resetRulesAction();
+        }
     }
 
     toggleView(view) {
@@ -85,6 +94,7 @@ class App extends React.Component {
                     <button className={classnames('menu-button', {'selected': view === 'traffic'})} onClick={this.toggleTrafficview}>&#9783; Traffics</button>
                     <button className={classnames('menu-button', {'selected': view === 'rule'})} onClick={this.toggleRuleview}>&#10040; Rules</button>
                     <button className={classnames('menu-button', {'selected': view === 'processor'})} onClick={this.toggleProcessorview}>&#10148; Processors</button>
+                    <button className='menu-button reset-button' onClick={this.resetRules}>Reset Rules</button>
                 </div>
                 {this.renderMessageBar()}
                 {view === 'traffic' ? this.renderTrafficView() : null}
@@ -108,6 +118,13 @@ const mapStateToProps = (state) => {
     };
 };
 
+const mapDispatchToProps = (dispatch) => {
+    return {
+        resetRulesAction: bindActionCreators(resetRulesActionCreator, dispatch)
+    };
+};
+
 export default connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(App);

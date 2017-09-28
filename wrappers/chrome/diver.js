@@ -17,6 +17,10 @@ const loadProcessors = () => {
     const state = store.getState();
     const processors = state.app.state.app.processors;
 
+    if (!processors) {
+        return;
+    }
+
     window.diver.processors = {};
 
     const loadPromises = Object.keys(processors).map((namespace) => {
@@ -70,8 +74,6 @@ const loadProcessors = () => {
     });
 };
 
-loadProcessors();
-
 store.dispatch({
     type: 'INIT',
     payload: {
@@ -79,7 +81,20 @@ store.dispatch({
     }
 });
 
-chrome.storage.sync.get('diverRules', ({diverRules}) => {
+chrome.storage.sync.get(['diverApp', 'diverRules'], ({diverApp, diverRules}) => {
+    if (diverApp) {
+        store.dispatch({
+            type: 'IMPORT_APP_STATE',
+            payload: {
+                appState: diverApp
+            }
+        });
+    } else {
+        store.dispatch({
+            type: 'INIT_APP_STATE'
+        });
+    }
+
     if (diverRules) {
         store.dispatch({
             type: 'IMPORT_RULES',
@@ -88,6 +103,8 @@ chrome.storage.sync.get('diverRules', ({diverRules}) => {
             }
         });
     }
+
+    loadProcessors();
 });
 
 chrome.devtools.network.onRequestFinished.addListener((traffic) => {
@@ -127,7 +144,7 @@ store.subscribe(() => {
     storeState.rules = newState.rules;
 
     if (prevRules !== nextRules) {
-        chrome.storage.sync.set({'diverRules': nextRules});
+        chrome.storage.sync.set({diverRules: nextRules});
     }
 
     nextRules.ruleIds.forEach((nextRuleId) => {
@@ -154,8 +171,9 @@ store.subscribe(() => {
         loadProcessors();
     }
 
-    // set window.diver.processors to null
-    // avoid referencing window.diver.processors in jsx
+    if ((prevState && prevState.app) !== nextState.app) {
+        chrome.storage.sync.set({diverApp: nextState.app});
+    }
 });
 
 render(

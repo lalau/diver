@@ -4,14 +4,16 @@ const DEFAULT_STATE = {
     selectedRuleId: null,
     selectedTrafficIndex: null,
     state: {
-        app: {
-            processors: {
-                query: {
-                    url: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.3/query.js'
-                }
-            }
-        },
+        app: {},
         page: {}
+    }
+};
+
+const INIT_APP_STATE = {
+    processors: {
+        query: {
+            url: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.3/query.js'
+        }
     }
 };
 
@@ -28,8 +30,12 @@ const DEFAULT_STATE = {
 
 export default (state, {type, payload}) => {
     switch (type) {
+    case 'IMPORT_APP_STATE':
+        return importAppState(state, payload);
     case 'INIT':
         return init(state, payload);
+    case 'INIT_APP_STATE':
+        return initAppState(state, payload);
     case 'REMOVE_PROCESSOR':
         return removeProcessor(state, payload);
     case 'SELECT_RULE':
@@ -43,6 +49,22 @@ export default (state, {type, payload}) => {
     default:
         return state || DEFAULT_STATE;
     }
+};
+
+const importAppState = (state, {appState}) => {
+    return update(state, {
+        state: {
+            app: {
+                $set: appState
+            }
+        }
+    });
+};
+
+const initAppState = (state) => {
+    return importAppState(state, {
+        appState: INIT_APP_STATE
+    });
 };
 
 const init = (state) => {
