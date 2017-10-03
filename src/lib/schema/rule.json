@@ -1,0 +1,121 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+        },
+        "name": {
+            "type": "string"
+        },
+        "color": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{6}$"
+        },
+        "data": {
+            "type": "object",
+            "patternProperties": {
+                "^.+$": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^.+$": {
+                            "type": "object",
+                            "properties": {
+                                "desc": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    }
+                }
+            }
+        },
+        "dataOrder": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "namespace": {
+                        "type": "string"
+                    }
+                },
+                "required": ["name", "namespace"],
+                "additionalProperties": false
+            }
+        },
+        "filters": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "name", "value"],
+                "additionalProperties": false
+            }
+        },
+        "labels": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "matches": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "pattern": "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+                                },
+                                "namespace": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": ["id", "namespace", "name", "value"],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": ["id", "matches", "name"],
+                "additionalProperties": false
+            }
+        },
+        "namespaces": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "uniqueItems": true
+        }
+    },
+    "required": ["id", "name", "color", "data", "dataOrder", "filters", "labels", "namespaces"],
+    "additionalProperties": false
+}

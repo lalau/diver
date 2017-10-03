@@ -455,10 +455,30 @@ body {
         background: #c0c0c0;
         cursor: pointer;
     }
+
+    .import-error {
+        margin-left: 10px;
+        display: inline-block;
+    }
+
+    .import-error-message {
+        display: inline-block;
+        margin: 0;
+        font-size: 14px;
+        color: red;
+    }
+
+    .import-error-dismiss {
+        margin-left: 10px;
+        background-color: #dfdfdf;
+        border: 1px solid #aaa;
+        padding: 2px 6px;
+    }
 }
 
 #import-rule {
     opacity: 0;
+    width: 1px;
 }
 
 .processor-view {

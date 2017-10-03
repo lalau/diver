@@ -5,12 +5,13 @@ import webpack from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 
 const chromeDevConfig = {
-    entry: [
-        './wrappers/chrome/diver.js'
-    ],
+    entry: {
+        diver: './wrappers/chrome/diver.js',
+        sandbox: './wrappers/chrome/sandbox.js'
+    },
     output: {
         path: path.join(__dirname, './dist/chrome/'),
-        filename: 'bundle.js'
+        filename: '[name].js'
     },
     module: {
         loaders: [
@@ -46,7 +47,7 @@ const chromeDevConfig = {
         ]
     },
     plugins: [
-        new CopyWebpackPlugin([{from: './wrappers/chrome/'}], {ignore: ['diver.js']})
+        new CopyWebpackPlugin([{from: './wrappers/chrome/'}], {ignore: ['diver.js', 'sandbox.js']})
     ]
 };
 

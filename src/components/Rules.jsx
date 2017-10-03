@@ -9,8 +9,18 @@ class Rules extends React.Component {
     constructor(props) {
         super(props);
 
+        this.state = {
+            importErrors: null
+        };
+        this.dismissImportError = this.dismissImportError.bind(this);
         this.exportRule = this.exportRule.bind(this);
         this.importRule = this.importRule.bind(this);
+    }
+
+    dismissImportError() {
+        this.setState({
+            importErrors: null
+        });
     }
 
     exportRule({ruleId}) {
@@ -34,8 +44,18 @@ class Rules extends React.Component {
         const reader = new FileReader();
         reader.onload = ({target}) => {
             try {
-                importRuleInfoAction({
-                    ruleInfo: JSON.parse(target.result)
+                const ruleInfo = JSON.parse(target.result);
+                chrome.runtime.sendMessage({
+                    type: 'VALIDATE_RULE',
+                    payload: {ruleInfo}
+                }, ({type, result}) => {
+                    if (type === 'VALIDATE_RULE_RESULT') {
+                        if (result.errors) {
+                            this.setState({importErrors: result.errors});
+                        } else {
+                            importRuleInfoAction({ruleInfo});
+                        }
+                    }
                 });
             } catch (e) {
                 // ignore error reading file
@@ -45,10 +65,18 @@ class Rules extends React.Component {
     }
 
     renderImport() {
+        const {importErrors} = this.state;
+
         return (
             <div>
-                <label htmlFor='import-rule' className='rule-button'>Import</label>
+                <label htmlFor='import-rule' className='rule-button'>&#8681; Import</label>
                 <input type='file' id='import-rule' accept='.json' onChange={this.importRule}/>
+                {importErrors && importErrors[0] ? (
+                    <div className='import-error'>
+                        <p className='import-error-message'>Import Error: Data path '{importErrors[0].dataPath}' {importErrors[0].message}</p>
+                        <button className='import-error-dismiss' onClick={this.dismissImportError}>Dismiss</button>
+                    </div>
+                ) : null}
             </div>
         );
     }

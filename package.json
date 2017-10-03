@@ -4,6 +4,7 @@
   "description": "chrome extension that dives into the network traffic",
   "main": "index.js",
   "dependencies": {
+    "ajv": "^5.2.3",
     "classnames": "^2.2.5",
     "immutability-helper": "^2.1.2",
     "lodash": "^4.17.4",

@@ -11,8 +11,11 @@
         "downloads"
     ],
     "background": {
-        "scripts": ["eventPage.js"],
+        "page": "eventpage.html",
         "persistent": false
+    },
+    "sandbox": {
+        "pages": ["sandbox.html"]
     },
     "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'"
 }
