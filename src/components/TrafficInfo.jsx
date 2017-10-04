@@ -19,6 +19,7 @@ class TrafficInfo extends React.Component {
         this.collapseUrl = this.toggleUrlExpand.bind(this, false);
         this.deselectTraffic = this.deselectTraffic.bind(this);
         this.expandUrl = this.toggleUrlExpand.bind(this, true);
+        this.exportTraffic = this.exportTraffic.bind(this);
         this.selectRuleId = this.selectRuleId.bind(this);
         this.toggleData = this.toggleData.bind(this);
     }
@@ -34,6 +35,18 @@ class TrafficInfo extends React.Component {
 
     deselectTraffic() {
         this.props.selectTrafficAction(null);
+    }
+
+    exportTraffic() {
+        const {trafficInfo} = this.props;
+
+        chrome.runtime.sendMessage({
+            type: 'EXPORT_CONTENT',
+            payload: {
+                content: trafficInfo.traffic,
+                name: trafficInfo.hostname + '-' + trafficInfo.index
+            }
+        });
     }
 
     toggleUrlExpand(urlExpanded) {
@@ -198,6 +211,7 @@ class TrafficInfo extends React.Component {
         return (
             <div>
                 <div className='info-pane-menu'>
+                    <button className='info-pane-menu-button diver-button' onClick={this.exportTraffic}>&#8682; Export</button>
                     <button className='info-pane-menu-button diver-button' onClick={this.deselectTraffic}>&#10132; Close</button>
                 </div>
                 <div className='traffic-info info-pane-content'>

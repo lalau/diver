@@ -24,10 +24,13 @@ class Rules extends React.Component {
     }
 
     exportRule({ruleId}) {
+        const ruleInfo = this.props.ruleInfos[ruleId];
+
         chrome.runtime.sendMessage({
-            type: 'EXPORT_RULE',
+            type: 'EXPORT_CONTENT',
             payload: {
-                ruleInfo: this.props.ruleInfos[ruleId]
+                content: ruleInfo,
+                name: ruleInfo.id
             }
         });
     }
