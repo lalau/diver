@@ -428,6 +428,9 @@ body {
 
 .rule-view {
     padding: 20px;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: scroll;
 
     .rule-config {
         font-size: 14px;
