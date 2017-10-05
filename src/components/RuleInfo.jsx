@@ -250,7 +250,7 @@ class RuleInfo extends React.Component {
         });
 
         namespaceTarget.value = '';
-        this.selectNamespace({labelId});
+        this.selectNamespace(namespaceTarget, {labelId});
     }
 
     removeLabelDataList({labelIndex, listIndex}) {
@@ -283,11 +283,11 @@ class RuleInfo extends React.Component {
         });
     }
 
-    selectNamespace({labelId}) {
+    selectNamespace(target, {labelId}) {
         this.setState({
             labelNamespace: update(this.state.labelNamespace, {
                 [labelId]: {
-                    $set: this.addLabelNamespaceSelects[labelId].value
+                    $set: target.value
                 }
             })
         });

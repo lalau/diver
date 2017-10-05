@@ -7,11 +7,11 @@ class SimpleSelect extends React.Component {
         this.handleChange = this.handleChange.bind(this);
     }
 
-    handleChange() {
+    handleChange({target}) {
         const {handleChange, params} = this.props;
 
         if (handleChange) {
-            handleChange(params);
+            handleChange(target, params);
         }
     }
 

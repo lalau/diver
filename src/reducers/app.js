@@ -1,6 +1,7 @@
 import update from 'immutability-helper';
 
 const DEFAULT_STATE = {
+    navigateTimestamp: null,
     selectedRuleId: null,
     selectedTrafficIndex: null,
     state: {
@@ -19,6 +20,7 @@ const INIT_APP_STATE = {
 
 /*
 {
+    navigateTimestamp: 123456,
     selectedRuleId: uuid,
     selectedTrafficIndex: 3,
     state: {
@@ -69,6 +71,9 @@ const initAppState = (state) => {
 
 const init = (state) => {
     return update(state, {
+        navigateTimestamp: {
+            $set: Date.now()
+        },
         selectedRuleId: {
             $set: null
         },

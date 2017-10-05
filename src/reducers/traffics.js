@@ -242,7 +242,7 @@ const getSetValueUpdate = (set, value) => {
     const normalizedValue = value.trim().toLowerCase();
 
     if (!set.includes(normalizedValue)) {
-        const newSet = set.concat();
+        const newSet = set.slice(0);
         newSet.push(normalizedValue);
         newSet.sort();
         return {$set: newSet};
@@ -252,7 +252,7 @@ const getSetValueUpdate = (set, value) => {
 };
 
 const getSetValuesUpdate = (set, values, attr) => {
-    const newSet = set.concat();
+    const newSet = set.slice(0);
 
     values.forEach((value) => {
         const normalizedValue = value[attr].trim().toLowerCase();

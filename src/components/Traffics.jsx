@@ -9,6 +9,8 @@ import selectRuleActionCreator from '../actions/select-rule-action-creator';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
 import reorderRuleDataActionCreator from '../actions/reorder-rule-data-action-creator';
 import SimpleButton from './partials/SimpleButton.jsx';
+import SimpleInput from './partials/SimpleInput.jsx';
+import SimpleSelect from './partials/SimpleSelect.jsx';
 import DataHeader from './partials/DataHeader.jsx';
 import {getColumnWidth, getTrafficLabel} from '../lib/util';
 
@@ -20,18 +22,37 @@ class Traffics extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-            view: {}
-        };
+        const {ruleIds} = this.props;
+        const rules = {};
+        ruleIds.forEach((ruleId) => {
+            rules[ruleId] = this.getInitRuleState();
+        });
+
+        this.state = {rules};
         this.selectRule = this.selectRule.bind(this);
+        this.filterTraffics = this.filterTraffics.bind(this);
         this.handleTrafficInfo = this.handleTrafficInfo.bind(this);
         this.handleViewChange = this.handleViewChange.bind(this);
         this.reorderData = this.reorderData.bind(this);
+        this.toggleOrder = this.toggleOrder.bind(this);
+        this.togglePaginate = this.togglePaginate.bind(this);
+        this.toggleShowTraffics = this.toggleShowTraffics.bind(this);
+    }
+
+    getInitRuleState() {
+        return {
+            filterText: '',
+            order: 'oldest',
+            paginate: 'trimmed',
+            showTraffics: true,
+            tablePage: 0,
+            view: 'raw'
+        };
     }
 
     componentWillReceiveProps(nextProps) {
         const {ruleIds, ruleInfos} = this.props;
-        let newView = this.state.view;
+        let newRules = this.state.rules;
 
         ruleIds.forEach((ruleId) => {
             const ruleInfo = ruleInfos[ruleId];
@@ -39,22 +60,35 @@ class Traffics extends React.Component {
 
             if (!nextRuleInfo) {
                 // rule removed
-                newView = update(newView, {
+                newRules = update(newRules, {
                     $unset: [ruleId]
                 });
             } else if (nextRuleInfo.dataOrder.length === 0 && ruleInfo.dataOrder.length > 0) {
                 // all data removed
-                newView = update(newView, {
+                newRules = update(newRules, {
                     [ruleId]: {
-                        $set: 'raw'
+                        view: {
+                            $set: 'raw'
+                        }
                     }
                 });
             }
         });
 
-        if (newView !== this.state.view) {
+        nextProps.ruleIds.forEach((ruleId) => {
+            if (!ruleInfos[ruleId]) {
+                // new rule
+                newRules = update(newRules, {
+                    [ruleId]: {
+                        $set: this.getInitRuleState()
+                    }
+                });
+            }
+        });
+
+        if (newRules !== this.state.rules) {
             this.setState({
-                view: newView
+                rules: newRules
             });
         }
     }
@@ -73,9 +107,11 @@ class Traffics extends React.Component {
 
     handleViewChange({ruleId, view}) {
         this.setState({
-            view: update(this.state.view, {
+            rules: update(this.state.rules, {
                 [ruleId]: {
-                    $set: view
+                    view: {
+                        $set: view
+                    }
                 }
             })
         });
@@ -85,6 +121,81 @@ class Traffics extends React.Component {
         const {reorderRuleDataAction} = this.props;
 
         reorderRuleDataAction({ruleId, dataIndex, dir});
+    }
+
+    toggleOrder(target, {ruleId}) {
+        this.setState({
+            rules: update(this.state.rules, {
+                [ruleId]: {
+                    order: {
+                        $set: target.value
+                    },
+                    tablePage: {
+                        $set: 0
+                    }
+                }
+            })
+        });
+    }
+
+    togglePaginate(target, {ruleId}) {
+        const {paginate} = this.state.rules[ruleId];
+        const ruleUpdate = {
+            paginate: {
+                $set: target.value
+            }
+        };
+
+        if (paginate === 'paginate' && target.value !== 'paginate') {
+            ruleUpdate.tablePage = {
+                $set: 0
+            };
+        }
+
+        this.setState({
+            rules: update(this.state.rules, {
+                [ruleId]: ruleUpdate
+            })
+        });
+    }
+
+    toggleShowTraffics(target, {ruleId}) {
+        this.setState({
+            rules: update(this.state.rules, {
+                [ruleId]: {
+                    showTraffics: {
+                        $set: !this.state.rules[ruleId].showTraffics
+                    }
+                }
+            })
+        });
+    }
+
+    filterTraffics(target, {ruleId}) {
+        this.setState({
+            rules: update(this.state.rules, {
+                [ruleId]: {
+                    filterText: {
+                        $set: target.value
+                    },
+                    tablePage: {
+                        $set: 0
+                    }
+                }
+            })
+        });
+    }
+
+    setTablePage(ruleId, tablePage) {
+        this.setState({
+            rules: update(this.state.rules, {
+                [ruleId]: {
+                    tablePage: {
+                        $set: tablePage
+                    }
+                }
+            })
+        });
     }
 
     getRawColumns() {
@@ -133,16 +244,42 @@ class Traffics extends React.Component {
         return columns;
     }
 
-    renderTrafficGroup(ruleInfo) {
-        const {trafficInfos, trafficGroups, selectedRuleId, selectedTrafficIndex} = this.props;
-        const ruleView = this.state.view[ruleInfo.id] || 'raw';
-        const trafficGroup = trafficGroups[ruleInfo.id];
-        const filteredTrafficInfos = trafficGroup && trafficGroup.trafficIndexes.map((trafficIndex) => {
+    getFilteredTrafficInfos(ruleId) {
+        const {filterText, order} = this.state.rules[ruleId];
+        const {trafficInfos, trafficGroups} = this.props;
+        const groupTrafficInfos = trafficGroups[ruleId] && trafficGroups[ruleId].trafficIndexes.map((trafficIndex) => {
             return {
                 trafficInfo: trafficInfos[trafficIndex]
             };
         }) || [];
+
+        if (groupTrafficInfos.length === 0) {
+            return groupTrafficInfos;
+        }
+
+        const filteredTrafficInfos = !filterText ? groupTrafficInfos : groupTrafficInfos.filter(({trafficInfo}) => {
+            return trafficInfo.traffic.request.url.indexOf(filterText) >= 0;
+        });
+
+        return order === 'newest' ? filteredTrafficInfos.reverse() : filteredTrafficInfos;
+    }
+
+    renderTrafficGroup(ruleInfo) {
+        const ruleId = ruleInfo.id;
+        const {selectedRuleId, selectedTrafficIndex, trafficGroups} = this.props;
+        const {filterText, order, paginate, showTraffics, tablePage, view} = this.state.rules[ruleId];
+        const trafficIndexes = trafficGroups[ruleId] && trafficGroups[ruleId].trafficIndexes || [];
+        const filteredTrafficInfos = this.getFilteredTrafficInfos(ruleId);
+        const hasTable = filteredTrafficInfos.length > 0 && showTraffics;
+        const columns = view === 'data' ? this.getDataColumns(ruleInfo, filteredTrafficInfos) : this.getRawColumns();
+        const hasData = ruleInfo.dataOrder.length > 0 || ruleInfo.labels.length > 0;
+        const needPagination = filteredTrafficInfos.length > 30;
+        const pageSize = paginate === 'all' ? filteredTrafficInfos.length : Math.min(filteredTrafficInfos.length, 30);
         const getTrProps = (state, rowInfo) => {
+            if (!rowInfo) {
+                return {};
+            }
+
             const {index} = rowInfo.original.trafficInfo;
             const trProps = {};
 
@@ -152,8 +289,9 @@ class Traffics extends React.Component {
 
             return trProps;
         };
-        const columns = ruleView === 'data' ? this.getDataColumns(ruleInfo, filteredTrafficInfos) : this.getRawColumns();
-        const hasData = ruleInfo.dataOrder.length > 0 || ruleInfo.labels.length > 0;
+        const onPageChange = (tablePage) => {
+            this.setTablePage(ruleId, tablePage);
+        };
 
         columns.unshift({
             accessor: 'trafficInfo.index',
@@ -162,25 +300,53 @@ class Traffics extends React.Component {
         });
 
         return (
-            <div key={ruleInfo.id} className='traffic-group'>
+            <div key={ruleId} className={classnames('traffic-group', {'empty-traffic-group': !hasTable})}>
                 <div className='traffic-group-header' style={{backgroundColor: '#' + ruleInfo.color}}>
+                    <SimpleInput className='traffic-group-check' type='checkbox' defaultChecked={showTraffics} handleChange={this.toggleShowTraffics} params={{ruleId}}></SimpleInput>
                     <h2 className='traffic-group-title'>{ruleInfo.name}</h2>
+                    <div className='traffic-counts'>({filteredTrafficInfos.length})</div>
                     <div className='edit-buttons'>
-                        {hasData ? <SimpleButton className={classnames('diver-button', {selected: ruleView === 'raw'})} handleClick={this.handleViewChange} params={{ruleId: ruleInfo.id, view: 'raw'}}>Raw</SimpleButton> : null}
-                        {hasData ? <SimpleButton className={classnames('diver-button', {selected: ruleView === 'data'})} handleClick={this.handleViewChange} params={{ruleId: ruleInfo.id, view: 'data'}}>Data</SimpleButton> : null}
-                        {selectedRuleId !== ruleInfo.id ?
-                            <SimpleButton className='diver-button' handleClick={this.selectRule} params={{ruleId: ruleInfo.id}}>&#10000; Edit</SimpleButton> :
-                            <SimpleButton className='diver-button' handleClick={this.selectRule} params={{ruleId: null}}>&#10132; Close</SimpleButton>}
+                        <div className='edit-buttons-group'>
+                            {hasTable && hasData ? <SimpleButton className={classnames('diver-button', {selected: view === 'raw'})} handleClick={this.handleViewChange} params={{ruleId, view: 'raw'}}>Raw</SimpleButton> : null}
+                            {hasTable && hasData ? <SimpleButton className={classnames('diver-button', {selected: view === 'data'})} handleClick={this.handleViewChange} params={{ruleId, view: 'data'}}>Data</SimpleButton> : null}
+                            {selectedRuleId !== ruleId ?
+                                <SimpleButton className='diver-button' handleClick={this.selectRule} params={{ruleId}}>&#10000; Edit</SimpleButton> :
+                                <SimpleButton className='diver-button' handleClick={this.selectRule} params={{ruleId: null}}>&#10132; Close</SimpleButton>}
+                        </div>
                     </div>
                 </div>
-                <ReactTable
-                    data={filteredTrafficInfos}
-                    pageSize={filteredTrafficInfos.length}
-                    columns={columns}
-                    getTrProps={getTrProps}
-                    showPagination={false}
-                    sortable={false}
-                    resizable={false}/>
+                {showTraffics && trafficIndexes.length > 0 ? (
+                    <div className='traffic-group-controls'>
+                        <SimpleInput className='traffic-group-filter' placeholder='Filter' defaultValue={filterText} handleInput={this.filterTraffics} params={{ruleId}}></SimpleInput>
+                        <SimpleSelect className='traffic-group-order traffic-group-item' defaultValue={order} handleChange={this.toggleOrder} params={{ruleId}}>
+                            <option value='oldest'>Oldest First</option>
+                            <option value='newest'>Newest First</option>
+                        </SimpleSelect>
+                        {needPagination ? (
+                            <SimpleSelect className='traffic-group-paginate traffic-group-item' defaultValue={paginate} handleChange={this.togglePaginate} params={{ruleId}}>
+                                <option value='trimmed'>Trimmed</option>
+                                <option value='paginate'>Paginate</option>
+                                <option value='all'>All</option>
+                            </SimpleSelect>
+                        ) : null}
+                    </div>
+                ) : null}
+                {hasTable ? (
+                    <ReactTable
+                        data={filteredTrafficInfos}
+                        page={tablePage}
+                        pageSize={pageSize}
+                        columns={columns}
+                        getTrProps={getTrProps}
+                        onPageChange={onPageChange}
+                        showPagination={paginate === 'paginate' && needPagination}
+                        showPaginationTop={true}
+                        showPaginationBottom={true}
+                        showPageSizeOptions={false}
+                        sortable={false}
+                        resizable={false}
+                    />
+                ) : null}
             </div>
         );
     }

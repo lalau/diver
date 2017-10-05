@@ -132,20 +132,54 @@ body {
 
 .traffic-pane {
     .raw-traffics-header {
-        padding: 10px;
         background-color: #eee;
-        margin: 0 0 15px 0;
+    }
+
+    .empty-traffic-group {
+        padding-bottom: 15px;
     }
 
     .traffic-group-header {
-        padding: 10px 5px 10px 10px;
-        margin: 0 0 15px 0;
+        display: flex;
+        padding: 5px;
+        height: 20px;
+        line-height: 20px;
     }
 
     .traffic-group-title {
-        display: inline;
         padding: 0;
         margin: 0;
+        font-size: 12px;
+    }
+
+    .traffic-counts {
+        margin-left: 5px;
+        min-width: 40px;
+    }
+
+    .traffic-group-controls {
+        display: flex;
+        padding: 3px 5px;
+    }
+
+    .traffic-group-item {
+        margin-left: 10px;
+    }
+
+    .traffic-group-check {
+        line-height: 20px;
+        height: 20px;
+        margin: 0 5px 0 0;
+    }
+
+    .traffic-group-filter {
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        width: 120px;
+    }
+
+    .traffic-group-paginate {
+        margin-left: 10px;
     }
 
     .selected-traffic {
@@ -153,7 +187,11 @@ body {
     }
 
     .edit-buttons {
-        float: right;
+        flex: 1;
+
+        .edit-buttons-group {
+            float: right;
+        }
 
         .diver-button {
             margin-left: 5px;
@@ -173,6 +211,7 @@ body {
             line-height: 15px;
             position: absolute;
             top: 5px;
+            height: 15px;
         }
 
         .data-move-left {
