@@ -181,11 +181,11 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
     const trafficGroupsUpdate = {};
     const filtersUpdate = {};
     const dataKeysUpdate = {};
+    const processQuery = processors.query && processors.query.process;
 
-    Object.keys(processors).forEach((namespace) => {
-        const {process} = processors[namespace];
-        trafficInfo.processed[namespace] = typeof process === 'function' ? process(traffic) : {};
-    });
+    // process query for all traffic because it's the default processor for new rules
+    // will have to ask for user to reload when we do not process query by default
+    trafficInfo.processed.query = typeof processQuery === 'function' ? processQuery(traffic) : {};
 
     rules.ruleIds.forEach((ruleId) => {
         const ruleInfo = rules.ruleInfos[ruleId];
@@ -199,6 +199,13 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
 
         ruleInfo.namespaces.forEach((namespace) => {
             const newNamespaceDataKeys = [];
+
+            // make sure we only execute processor needed by the rule matching the traffic
+            // and only execute once if a traffic matches two rules using the same processor
+            if (!trafficInfo.processed[namespace]) {
+                const {process} = processors[namespace] || {};
+                trafficInfo.processed[namespace] = typeof process === 'function' ? process(traffic) : {};
+            }
 
             Object.keys(trafficInfo.processed[namespace] || {}).forEach((dataKey) => {
                 if (!dataKeys[namespace].includes(dataKey)) {

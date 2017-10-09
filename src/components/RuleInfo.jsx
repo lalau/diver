@@ -297,7 +297,7 @@ class RuleInfo extends React.Component {
         const {ruleInfo} = this.props;
 
         return (
-            <div className='rule-info-header'>
+            <div className='pane-section rule-info-header'>
                 <h3 className='rule-name'>{ruleInfo.name}</h3>
                 <SimpleButton className='rule-name-button diver-button' handleClick={this.toggleEditRuleName} params={{editing: true}}>&#10000; Edit</SimpleButton>
             </div>
@@ -308,7 +308,7 @@ class RuleInfo extends React.Component {
         const {ruleInfo} = this.props;
 
         return (
-            <div className='rule-info-header'>
+            <div className='pane-section rule-info-header'>
                 <input className='rule-name-input' defaultValue={ruleInfo.name} onBlur={this.updateRuleName} ref={(input) => {this.ruleNameInput = input;}}/>
             </div>
         );
@@ -318,7 +318,7 @@ class RuleInfo extends React.Component {
         const {ruleInfo, trafficFilters} = this.props;
 
         return (
-            <div className='filters section'>
+            <div className='pane-section filters'>
                 <h4 className='section-header'>Filters</h4>
                 <ul className='section-list'>
                     {ruleInfo.filters.map((filter, filterIndex) => {
@@ -351,7 +351,7 @@ class RuleInfo extends React.Component {
         const {ruleInfo, processors} = this.props;
 
         return (
-            <div className='processors section'>
+            <div className='pane-section processors'>
                 <h4 className='section-header'>Processors</h4>
                 <ul className='section-list'>
                     {ruleInfo.namespaces.map((namespace) => {
@@ -389,7 +389,7 @@ class RuleInfo extends React.Component {
         const {processors, ruleInfo, trafficGroup} = this.props;
 
         return (
-            <div className='labels section'>
+            <div className='pane-section labels'>
                 <h4 className='section-header'>Labels</h4>
                 <ul className='section-list'>
                     {ruleInfo.labels.map((label, labelIndex) => {
@@ -458,7 +458,7 @@ class RuleInfo extends React.Component {
         }
 
         return (
-            <div className='data section' key={namespace}>
+            <div className='pane-section data' key={namespace}>
                 <h4 className='section-header'>Data - {processors[namespace].name}</h4>
                 <ul className='section-list'>
                     {dataKeys.map((name) => {
@@ -483,21 +483,19 @@ class RuleInfo extends React.Component {
         const {ruleInfo} = this.props;
 
         return (
-            <div>
-                <div className='info-pane-menu'>
-                    <button className='info-pane-menu-button diver-button' style={{display: 'none'}}>&#11014; Export</button>
-                    <button className='info-pane-menu-button diver-button' onClick={this.removeRule}>&#10005; Delete</button>
-                    <button className='info-pane-menu-button diver-button' onClick={this.deselectRule}>&#10132; Close</button>
+            <div className='rule-info'>
+                <div className='pane-section pane-top-menu pane-top-menu-right'>
+                    <button className='pane-top-menu-button diver-button' style={{display: 'none'}}>&#11014; Export</button>
+                    <button className='pane-top-menu-button diver-button' onClick={this.removeRule}>&#10005; Delete</button>
+                    <button className='pane-top-menu-button diver-button' onClick={this.deselectRule}>&#10132; Close</button>
                 </div>
-                <div className='rule-info info-pane-content'>
-                    {editingRuleName ? this.renderEditRuleName() : this.renderRuleName()}
-                    {this.renderFilters()}
-                    {this.renderProcessors()}
-                    {this.renderLabels()}
-                    {ruleInfo.namespaces.map((namespace) => {
-                        return this.renderData(namespace);
-                    })}
-                </div>
+                {editingRuleName ? this.renderEditRuleName() : this.renderRuleName()}
+                {this.renderFilters()}
+                {this.renderProcessors()}
+                {this.renderLabels()}
+                {ruleInfo.namespaces.map((namespace) => {
+                    return this.renderData(namespace);
+                })}
             </div>
         );
     }

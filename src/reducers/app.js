@@ -1,5 +1,7 @@
 import update from 'immutability-helper';
 
+const QUERY_PROCESSOR_URL = 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.4/query.js';
+
 const DEFAULT_STATE = {
     navigateTimestamp: null,
     selectedRuleId: null,
@@ -13,7 +15,7 @@ const DEFAULT_STATE = {
 const INIT_APP_STATE = {
     processors: {
         query: {
-            url: 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.3/query.js'
+            url: QUERY_PROCESSOR_URL
         }
     }
 };
@@ -54,6 +56,16 @@ export default (state, {type, payload}) => {
 };
 
 const importAppState = (state, {appState}) => {
+    appState = update(appState, {
+        processors: {
+            query: {
+                url: {
+                    $set: QUERY_PROCESSOR_URL
+                }
+            }
+        }
+    });
+
     return update(state, {
         state: {
             app: {

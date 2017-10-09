@@ -2,56 +2,105 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
-import SimpleButton from './partials/SimpleButton.jsx';
 import removeProcessorActionCreator from '../actions/remove-processor-action-creator';
 import updateProcessorActionCreator from '../actions/update-processor-action-creator';
 import updateAppStateActionCreator from '../actions/update-app-state-action-creator';
-import update from 'immutability-helper';
 import messages from '../strings/messages';
+import classnames from 'classnames';
 
 class Processors extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            edit: {}
+            edit: false,
+            errorKey: null,
+            selectedNamespace: this.getFirstProcessorNamespace()
         };
-        Object.keys(this.props.processors).forEach((namespace) => {
-            this.state.edit[namespace] = false;
-        });
 
-        this.processorUrlInputs = {};
         this.addProcessor = this.addProcessor.bind(this);
+        this.cancelAdd = this.cancelAdd.bind(this);
         this.removeProcessor = this.removeProcessor.bind(this);
-        this.toggleProcessorEdit = this.toggleProcessorEdit.bind(this);
+        this.selectNamespace = this.selectNamespace.bind(this);
+        this.setupAddProcessor = this.setupAddProcessor.bind(this);
+        this.toggleEdit = this.toggleEdit.bind(this);
         this.updateProcessor = this.updateProcessor.bind(this);
+    }
+
+    getFirstProcessorNamespace() {
+        return Object.keys(this.props.processors)[0];
+    }
+
+    validateUrl(url) {
+        try {
+            return (new URL(url).protocol).indexOf('http') === 0;
+        } catch (e) {
+            return false;
+        }
     }
 
     addProcessor() {
         const {processors, updateProcessorAction} = this.props;
-        const namespace = this.addProcessorNs.value.trim();
-        const url = this.addProcessorUrl.value.trim();
+        const namespace = this.processorNsInput.value.trim();
+        const url = this.processorUrlInput.value.trim();
+        let addProcessorError;
 
-        if (!namespace || !url || processors[namespace]) {
-            return;
+        if (!namespace) {
+            addProcessorError = 'PROCESSOR_NAMESPACE_REQUIRED';
+        } else if (!url) {
+            addProcessorError = 'PROCESSOR_URL_REQUIRED';
+        } else if (!this.validateUrl(url)) {
+            addProcessorError = 'PROCESSOR_URL_INVALID';
+        } else if (processors[namespace]) {
+            addProcessorError = 'PROCESSOR_NAMESPACE_EXISTED';
+        }
+
+        if (addProcessorError) {
+            return this.setState({
+                errorKey: addProcessorError
+            });
         }
 
         updateProcessorAction({namespace, url});
         this.showReloadMessage();
-
-        this.addProcessorNs.value = '';
-        this.addProcessorUrl.value = '';
+        this.setState({
+            errorKey: null,
+            selectedNamespace: namespace
+        });
     }
 
-    removeProcessor({namespace}) {
+    removeProcessor() {
+        const {selectedNamespace} = this.state;
         const {removeProcessorAction} = this.props;
 
-        removeProcessorAction({namespace});
+        removeProcessorAction({
+            namespace: selectedNamespace
+        });
         this.showReloadMessage();
         this.setState({
-            edit: update(this.state.edit, {
-                $unset: [namespace]
-            })
+            edit: false,
+            errorKey: null,
+            selectedNamespace: this.getFirstProcessorNamespace()
+        });
+    }
+
+    selectNamespace({target}) {
+        const selectedNamespace = target.getAttribute('data-namespace');
+
+        if (selectedNamespace) {
+            this.setState({
+                edit: false,
+                errorKey: null,
+                selectedNamespace
+            });
+        }
+    }
+
+    setupAddProcessor() {
+        this.setState({
+            edit: false,
+            errorKey: null,
+            selectedNamespace: null
         });
     }
 
@@ -66,85 +115,119 @@ class Processors extends React.Component {
         });
     }
 
-    toggleProcessorEdit({namespace, edit}) {
+    cancelAdd() {
         this.setState({
-            edit: update(this.state.edit, {
-                $set: {
-                    [namespace]: edit
-                }
-            })
+            errorKey: null,
+            selectedNamespace: this.getFirstProcessorNamespace()
         });
     }
 
-    updateProcessor({namespace}) {
+    toggleEdit() {
+        this.setState({
+            edit: !this.state.edit,
+            errorKey: null
+        });
+    }
+
+    updateProcessor() {
+        const {selectedNamespace} = this.state;
         const {updateProcessorAction} = this.props;
-        const oldUrl = this.props.processors[namespace].url;
-        const newUrl = this.processorUrlInputs[namespace].value.trim();
+        const oldUrl = this.props.processors[selectedNamespace].url;
+        const newUrl = this.processorUrlInput.value.trim();
+
+        if (!this.validateUrl(newUrl)) {
+            return this.setState({
+                errorKey: 'PROCESSOR_URL_INVALID'
+            });
+        }
 
         if (oldUrl !== newUrl) {
-            updateProcessorAction({namespace, url: newUrl});
+            updateProcessorAction({
+                namespace: selectedNamespace,
+                url: newUrl
+            });
             this.showReloadMessage();
         }
 
-        this.toggleProcessorEdit({namespace, edit: false});
+        this.toggleEdit();
     }
 
-    renderUrlDisplay(namespace) {
-        const processorUrl = this.props.processors[namespace].url;
-        const editable = namespace !== 'query';
+    renderMenuPane() {
+        const {processors} = this.props;
+        const {selectedNamespace} = this.state;
 
         return (
-            <div className='processor-row'>
-                <a href={processorUrl} target='_blank' className='processor-url processor-url-display'>{processorUrl}</a>
-                {editable ? <SimpleButton className='processor-button' handleClick={this.toggleProcessorEdit} params={{namespace, edit: true}}>Edit</SimpleButton> : null}
-                {editable ? <SimpleButton className='processor-button' handleClick={this.removeProcessor} params={{namespace}}>Remove</SimpleButton> : null}
+            <div className='menu-pane'>
+                <div>
+                    <div className='pane-section pane-top-menu pane-top-menu-left'>
+                        <button className='pane-top-menu-button diver-button' onClick={this.setupAddProcessor}>Add</button>
+                    </div>
+                    <div className='pane-section'>
+                        <ul className='menu-list' onClick={this.selectNamespace}>
+                            {Object.keys(processors).map((namespace) => {
+                                const processor = processors[namespace];
+                                const isValidProcessor = processor && !!processor.name && typeof processor.process === 'function';
+
+                                return (
+                                    <li key={namespace} className={classnames('menu-item', {selected: namespace === selectedNamespace})} data-namespace={namespace}>
+                                        {isValidProcessor ? processor.name : <span className='invalid'>{namespace}</span>}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    renderUrlEdit(namespace) {
-        const processorUrl = this.props.processors[namespace].url;
+    renderProcessorPane() {
+        const {errorKey, edit, selectedNamespace} = this.state;
+        const processor = selectedNamespace && this.props.processors[selectedNamespace];
+        const processorUrl = processor && processor.url || '';
+        const editable = selectedNamespace !== 'query';
+        const newProcessor = !selectedNamespace;
+        const editMode = edit || newProcessor;
+        const isValidProcessor = processor && !!processor.name && typeof processor.process === 'function';
+        const messageKey = errorKey || (!isValidProcessor && !newProcessor && 'PROCESSOR_ERROR');
 
         return (
-            <div className='processor-row'>
-                <input className='processor-url' defaultValue={processorUrl} placeholder='URL' ref={(input) => {this.processorUrlInputs[namespace] = input;}}/>
-                <SimpleButton className='processor-button' handleClick={this.toggleProcessorEdit} params={{namespace, edit: false}}>Cancel</SimpleButton>
-                <SimpleButton className='processor-button' handleClick={this.updateProcessor} params={{namespace}}>Save</SimpleButton>
-            </div>
-        );
-    }
-
-    renderProcessor(namespace) {
-        const processor = this.props.processors[namespace];
-
-        if (!processor) {
-            return null;
-        }
-
-        return (
-            <div key={namespace}>
-                <h2 className='processor-name'>{processor.name || <p className='warning'>{messages.PROCESSOR_ERROR} "{namespace}"</p>}</h2>
-                <h3 className='processor-ns'>Namespace: {namespace}</h3>
-                {this.state.edit[namespace] ? this.renderUrlEdit(namespace) : this.renderUrlDisplay(namespace)}
+            <div className='content-pane'>
+                <div className='traffic-group-header'>
+                    <h2 className='traffic-group-title'>
+                        {newProcessor ?
+                            <input className='processor-ns-input' placeholder='Processor Namespace' ref={(input) => {this.processorNsInput = input;}}/> :
+                            (processor && processor.name || <span className='invalid'>{selectedNamespace}</span>)}
+                    </h2>
+                    {editable ? (
+                        <div className='traffic-group-buttons'>
+                            <div className='traffic-group-buttons-group'>
+                                {newProcessor ? <button className='diver-button' onClick={this.addProcessor}>Add</button> : null}
+                                {newProcessor ? <button className='diver-button' onClick={this.cancelAdd}>Cancel</button> : null}
+                                {edit ? <button className='diver-button' onClick={this.updateProcessor}>Save</button> : null}
+                                {edit ? <button className='diver-button' onClick={this.toggleEdit}>Cancel</button> : null}
+                                {!editMode ? <button className='diver-button' onClick={this.toggleEdit}>Edit</button> : null}
+                                {!newProcessor ? <button className='diver-button' onClick={this.removeProcessor}>Remove</button> : null}
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+                <div className='processor-config'>
+                    {editMode ?
+                        <input className='processor-url-input' defaultValue={processorUrl} placeholder='Processor URL' ref={(input) => {this.processorUrlInput = input;}}/> :
+                        <a href={processorUrl} target='_blank' className='processor-url'>{processorUrl}</a>
+                    }
+                </div>
+                {messageKey ? <div className='processor-error'>{messages[messageKey]}</div> : null}
             </div>
         );
     }
 
     render() {
-        const {processors} = this.props;
-
         return (
-            <div>
-                {Object.keys(processors).map((namespace) => {
-                    return this.renderProcessor(namespace);
-                })}
-                <div className='add-processor'>
-                    <h3 className='processor-ns'>Namespace: <input className='add-processor-ns' placeholder='Namespace' ref={(input) => {this.addProcessorNs = input;}}></input></h3>
-                    <div className='processor-row'>
-                        <input className='processor-url' placeholder='URL' ref={(input) => {this.addProcessorUrl = input;}}/>
-                        <button className='processor-button' onClick={this.addProcessor}>Add</button>
-                    </div>
-                </div>
+            <div className='config-view-wrapper'>
+                {this.renderMenuPane()}
+                {this.renderProcessorPane()}
             </div>
         );
     }

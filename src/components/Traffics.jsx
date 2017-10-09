@@ -304,9 +304,9 @@ class Traffics extends React.Component {
                 <div className='traffic-group-header' style={{backgroundColor: '#' + ruleInfo.color}}>
                     <SimpleInput className='traffic-group-check' type='checkbox' defaultChecked={showTraffics} handleChange={this.toggleShowTraffics} params={{ruleId}}></SimpleInput>
                     <h2 className='traffic-group-title'>{ruleInfo.name}</h2>
-                    <div className='traffic-counts'>({filteredTrafficInfos.length})</div>
-                    <div className='edit-buttons'>
-                        <div className='edit-buttons-group'>
+                    <div className='traffic-counts'>({trafficIndexes.length})</div>
+                    <div className='traffic-group-buttons'>
+                        <div className='traffic-group-buttons-group'>
                             {hasTable && hasData ? <SimpleButton className={classnames('diver-button', {selected: view === 'raw'})} handleClick={this.handleViewChange} params={{ruleId, view: 'raw'}}>Raw</SimpleButton> : null}
                             {hasTable && hasData ? <SimpleButton className={classnames('diver-button', {selected: view === 'data'})} handleClick={this.handleViewChange} params={{ruleId, view: 'data'}}>Data</SimpleButton> : null}
                             {selectedRuleId !== ruleId ?

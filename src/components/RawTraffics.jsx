@@ -32,6 +32,11 @@ class RawTraffics extends React.Component {
                 paginate: 'trimmed',
                 tablePage: 0
             });
+        } else if (Object.keys(this.props.ruleInfos).length === 0 && Object.keys(nextProps.ruleInfos).length > 0) {
+            this.setState({
+                showTraffics: false
+            });
+            this.showTrafficsInput.checked = false;
         }
     }
 
@@ -96,7 +101,7 @@ class RawTraffics extends React.Component {
     }
 
     render() {
-        const {ruleInfos, selectedTrafficIndex} = this.props;
+        const {ruleInfos, selectedTrafficIndex, trafficInfos} = this.props;
         const {filterText, order, paginate, showTraffics, tablePage} = this.state;
         const columns = [
             {
@@ -144,9 +149,9 @@ class RawTraffics extends React.Component {
         return (
             <div className='raw-traffics'>
                 <div className='traffic-group-header raw-traffics-header'>
-                    <input className='traffic-group-check' type='checkbox' defaultChecked={showTraffics} onChange={this.toggleShowTraffics}></input>
+                    <input className='traffic-group-check' type='checkbox' defaultChecked={showTraffics} onChange={this.toggleShowTraffics} ref={(input) => {this.showTrafficsInput = input;}}></input>
                     <h2 className='traffic-group-title'>Traffics</h2>
-                    <div className='traffic-counts'>({filteredTrafficInfos.length})</div>
+                    <div className='traffic-counts'>({trafficInfos.length})</div>
                 </div>
                 {showTraffics ? (
                     <div className='traffic-group-controls'>

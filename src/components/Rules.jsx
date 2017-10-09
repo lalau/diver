@@ -1,20 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import SimpleButton from './partials/SimpleButton.jsx';
 import {bindActionCreators} from 'redux';
 import importRuleInfoActionCreator from '../actions/import-rule-info-action-creator';
+import classnames from 'classnames';
 
 class Rules extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            importErrors: null
+            importErrors: null,
+            selectedRuleId: props.ruleIds.length > 0 ? props.ruleIds[0] : null
         };
         this.dismissImportError = this.dismissImportError.bind(this);
         this.exportRule = this.exportRule.bind(this);
         this.importRule = this.importRule.bind(this);
+        this.selectRule = this.selectRule.bind(this);
     }
 
     dismissImportError() {
@@ -23,14 +25,15 @@ class Rules extends React.Component {
         });
     }
 
-    exportRule({ruleId}) {
-        const ruleInfo = this.props.ruleInfos[ruleId];
+    exportRule() {
+        const {selectedRuleId} = this.state;
+        const ruleInfo = this.props.ruleInfos[selectedRuleId];
 
         chrome.runtime.sendMessage({
             type: 'EXPORT_CONTENT',
             payload: {
                 content: ruleInfo,
-                name: ruleInfo.id
+                name: selectedRuleId
             }
         });
     }
@@ -56,6 +59,7 @@ class Rules extends React.Component {
                         if (result.errors) {
                             this.setState({importErrors: result.errors});
                         } else {
+                            this.dismissImportError();
                             importRuleInfoAction({ruleInfo});
                         }
                     }
@@ -67,46 +71,70 @@ class Rules extends React.Component {
         reader.readAsText(file);
     }
 
-    renderImport() {
-        const {importErrors} = this.state;
+    selectRule({target}) {
+        const selectedRuleId = target.getAttribute('data-rule-id');
+
+        if (selectedRuleId) {
+            this.setState({selectedRuleId});
+        }
+    }
+
+    renderMenuPane() {
+        const {ruleIds, ruleInfos} = this.props;
+        const {importErrors, selectedRuleId} = this.state;
 
         return (
-            <div>
-                <label htmlFor='import-rule' className='rule-button'>&#8681; Import</label>
-                <input type='file' id='import-rule' accept='.json' onChange={this.importRule}/>
-                {importErrors && importErrors[0] ? (
-                    <div className='import-error'>
-                        <p className='import-error-message'>Import Error: Data path '{importErrors[0].dataPath}' {importErrors[0].message}</p>
-                        <button className='import-error-dismiss' onClick={this.dismissImportError}>Dismiss</button>
+            <div className='menu-pane'>
+                <div>
+                    <div className='pane-section pane-top-menu pane-top-menu-left'>
+                        <label htmlFor='import-rule' className='pane-top-menu-button diver-button'>&#8681; Import</label>
+                        <input type='file' id='import-rule' accept='.json' onChange={this.importRule}/>
                     </div>
-                ) : null}
+                    {importErrors && importErrors[0] ? (
+                        <div className='pane-section'>
+                            <p className='import-error-message'>Import Error: Data path '{importErrors[0].dataPath}' {importErrors[0].message}</p>
+                            <button className='diver-button' onClick={this.dismissImportError}>Dismiss</button>
+                        </div>
+                    ) : null}
+                    <div className='pane-section'>
+                        <ul className='menu-list' onClick={this.selectRule}>
+                            {ruleIds.map((ruleId) => {
+                                return (
+                                    <li key={ruleId} className={classnames('menu-item', {selected: ruleId === selectedRuleId})} data-rule-id={ruleId}>{ruleInfos[ruleId].name}</li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    renderRule(ruleInfo) {
-        const ruleId = ruleInfo.id;
+    renderRulePane() {
+        const ruleInfo = this.props.ruleInfos[this.state.selectedRuleId];
 
         return (
-            <div key={ruleId}>
-                <div className='rule-header'>
-                    <h2 className='rule-title'>{ruleInfo.name}</h2>
-                    <SimpleButton className='rule-button' handleClick={this.exportRule} params={{ruleId}}>&#8682; Export</SimpleButton>
+            <div className='content-pane'>
+                <div className='traffic-group-header' style={{backgroundColor: '#' + ruleInfo.color}}>
+                    <h2 className='traffic-group-title'>{ruleInfo.name}</h2>
+                    <div className='traffic-group-buttons'>
+                        <div className='traffic-group-buttons-group'>
+                            <button className='diver-button' onClick={this.exportRule}>&#8682; Export</button>
+                        </div>
+                    </div>
                 </div>
-                <pre className='rule-config'>{JSON.stringify(ruleInfo, null, 4)}</pre>
+                <div className='rule-config'>
+                    <pre className='rule-config-json'>{JSON.stringify(ruleInfo, null, 4)}</pre>
+                </div>
             </div>
         );
     }
 
     render() {
-        const {ruleIds, ruleInfos} = this.props;
-
         return (
-            <div>
-                {this.renderImport()}
-                {ruleIds.map((ruleId) => {
-                    return this.renderRule(ruleInfos[ruleId]);
-                })}
+            <div className='config-view-wrapper'>
+                {this.renderMenuPane()}
+                {this.renderRulePane()}
             </div>
         );
     }

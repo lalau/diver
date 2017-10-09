@@ -1,4 +1,8 @@
 {
-    "RELOAD_FOR_PROCESSORS": "Reload page after updating processors to apply the changes",
-    "PROCESSOR_ERROR": "Error loading or parsing processor for"
+    "PROCESSOR_ERROR": "Error loading or parsing processor",
+    "PROCESSOR_NAMESPACE_EXISTED": "Processor namespace already exists.",
+    "PROCESSOR_NAMESPACE_REQUIRED": "Processor namespace is required",
+    "PROCESSOR_URL_INVALID": "Processor url is invalid",
+    "PROCESSOR_URL_REQUIRED": "Processor url is requried",
+    "RELOAD_FOR_PROCESSORS": "Reload page after updating processors to apply the changes"
 }

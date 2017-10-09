@@ -19,6 +19,7 @@ body {
     width: 100%;
     height: 25px;
     box-sizing: border-box;
+    z-index: 100;
 }
 
 .menu-bar {
@@ -61,6 +62,131 @@ body {
 
     &.reset-button {
         float: right;
+    }
+}
+
+.pane-top-menu {
+    height: 30px;
+    box-sizing: border-box;
+}
+
+.pane-top-menu-left {
+    text-align: left;
+
+    .pane-top-menu-button {
+        margin-right: 5px;
+    }
+}
+
+.pane-top-menu-right {
+    text-align: right;
+
+    .pane-top-menu-button {
+        margin-left: 5px;
+    }
+}
+
+.pane-section {
+    padding: 5px;
+    border-bottom: 1px solid #aaa;
+
+    .section-header {
+        margin: 0 0 5px;
+        font-size: 12px;
+        height: 20px;
+        line-height: 20px;
+    }
+
+    .section-list {
+        margin: 0 0 5px;
+        padding: 0;
+        list-style: none;
+    }
+
+    .section-flex-row {
+        display: flex;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .section-button {
+        margin-right: 5px;
+        width: 20px;
+        min-width: 20px;
+    }
+
+    .section-label {
+        height: 20px;
+        line-height: 20px;
+        margin: 0 5px 0 0;
+        font-size: 12px;
+        font-weight: normal;
+        flex: none;
+    }
+
+    .section-input {
+        flex: 1 1 100%;
+        margin: 0;
+        padding: 0 0 0 5px;
+        border: none;
+        outline: none;
+    }
+
+    .section-select {
+        height: 20px;
+        box-sizing: border-box;
+        max-width: 100%;
+
+        &.buttoned {
+            max-width: calc(100% - 25px);
+        }
+    }
+}
+
+.pane-section:last-child {
+    border-bottom: 0;
+}
+
+.diver-button {
+    border: 0;
+    border-radius: 2px;
+    padding: 0 6px;
+    outline: none;
+    height: 20px;
+    line-height: 20px;
+    cursor: pointer;
+    background-color: #c0c0c0;
+    display: inline-block;
+    box-sizing: border-box;
+    font-size: 11px;
+
+    &.selected {
+        font-weight: bold;
+    }
+}
+
+.traffic-group-header {
+    display: flex;
+    padding: 5px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.traffic-group-title {
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+}
+
+.traffic-group-buttons {
+    flex: 1;
+
+    .traffic-group-buttons-group {
+        float: right;
+    }
+
+    .diver-button {
+        margin-left: 5px;
     }
 }
 
@@ -108,24 +234,9 @@ body {
         }
     }
 
-    .diver-button {
-        border: 0;
-        border-radius: 2px;
-        padding: 0 6px;
-        outline: none;
-        height: 20px;
-        line-height: 20px;
-        cursor: pointer;
-
-        &.selected {
-            font-weight: bold;
-        }
-    }
-
     .diver-check {
         margin: 0 5px 0 0;
         height: 20px;
-        width: 20px;
         flex: none;
     }
 }
@@ -137,19 +248,6 @@ body {
 
     .empty-traffic-group {
         padding-bottom: 15px;
-    }
-
-    .traffic-group-header {
-        display: flex;
-        padding: 5px;
-        height: 20px;
-        line-height: 20px;
-    }
-
-    .traffic-group-title {
-        padding: 0;
-        margin: 0;
-        font-size: 12px;
     }
 
     .traffic-counts {
@@ -186,18 +284,6 @@ body {
         background-color: #ddd;
     }
 
-    .edit-buttons {
-        flex: 1;
-
-        .edit-buttons-group {
-            float: right;
-        }
-
-        .diver-button {
-            margin-left: 5px;
-        }
-    }
-
     .ReactTable .data-header-wrapper {
         padding: 0;
     }
@@ -228,98 +314,22 @@ body {
     }
 }
 
-.info-pane {
-    .info-pane-menu {
-        height: 20px;
-        border-bottom: 1px solid #aaa;
-        padding: 10px;
-        text-align: right;
-    }
-
-    .info-pane-menu-button {
-        margin-left: 5px;
-    }
-
-    .info-pane-content {
-        height: 100%;
-        padding: 10px;
-        box-sizing: border-box;
-    }
-
-    .section {
-        padding: 10px 0;
-
-        .section-header {
-            margin: 0;
-            padding-bottom: 10px;
-            font-size: 14px;
-            height: 20px;
-            line-height: 20px;
-        }
-
-        .section-list {
-            margin: 0;
-            padding: 0;
-            padding-bottom: 5px;
-            list-style: none;
-        }
-
-        .section-flex-row {
-            display: flex;
-            width: 100%;
-            margin-bottom: 5px;
-        }
-
-        .section-button {
-            margin-right: 5px;
-            width: 20px;
-            min-width: 20px;
-        }
-
-        .section-label {
-            height: 20px;
-            line-height: 20px;
-            margin: 0 5px 0 0;
-            font-size: 12px;
-            font-weight: normal;
-            flex: none;
-        }
-
-        .section-input {
-            flex: 1 1 100%;
-            margin: 0;
-            padding: 0 0 0 5px;
-            border: none;
-            outline: none;
-        }
-
-        .section-select {
-            height: 20px;
-            box-sizing: border-box;
-            max-width: 100%;
-
-            &.buttoned {
-                max-width: calc(100% - 25px);
-            }
-        }
-    }
-}
-
 .rule-info {
     .rule-info-header {
-        padding-bottom: 10px;
         line-height: 20px;
-        height: 20px;
         word-break: break-all;
+        overflow: hidden;
     }
 
     .rule-name {
-        display: inline;
-        font-size: 16px;
+        display: inline-block;
+        font-size: 12px;
+        width: calc(100% - 50px);
+        margin: 0;
     }
 
     .rule-name-button {
-        margin-left: 5px;
+        float: right;
     }
 
     .rule-name-input {
@@ -465,56 +475,69 @@ body {
     }
 }
 
-.rule-view {
-    padding: 20px;
+.config-view {
+    position: relative;
     height: 100%;
-    box-sizing: border-box;
-    overflow: scroll;
 
-    .rule-config {
-        font-size: 14px;
-        font-family: inherit;
-        background-color: #dfdfdf;
-        padding: 20px;
-        margin: 0;
-        border: 1px solid #aaa;
+    .config-view-wrapper {
+        height: 100%;
+    }
+
+    .menu-pane {
+        width: 200px;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: #ddd;
         overflow: auto;
     }
 
-    .rule-header {
-        display: flex;
-    }
-
-    .rule-title {
-        flex: 1;
-    }
-
-    .rule-button {
-        margin: 10px 0;
-        border: 1px solid #777;
-        font-size: 14px;
-        padding: 6px;
-        background: #c0c0c0;
-        cursor: pointer;
-    }
-
-    .import-error {
-        margin-left: 10px;
-        display: inline-block;
-    }
-
-    .import-error-message {
-        display: inline-block;
+    .menu-list {
+        list-style: none;
         margin: 0;
-        font-size: 14px;
+        padding: 0;
+    }
+
+    .menu-item {
+        padding: 5px;
+        cursor: pointer;
+
+        &.selected {
+            font-weight: bold;
+        }
+
+        &:hover {
+            background-color: #ccc;
+        }
+    }
+
+    .content-pane {
+        margin-left: 200px;
+        height: 100%;
+        overflow-y: scroll;
+    }
+}
+
+.rule-view {
+    .import-error-message {
+        margin: 0 0 5px;
+        font-size: 12px;
         color: red;
     }
 
-    .import-error-dismiss {
-        margin-left: 10px;
+    .rule-config {
+        padding: 5px;
+    }
+
+    .rule-config-json {
+        font-size: 12px;
+        font-family: inherit;
         background-color: #dfdfdf;
+        padding: 20px;
+        margin: 5px;
         border: 1px solid #aaa;
-        padding: 2px 6px;
+        overflow: auto;
     }
 }
 
@@ -524,67 +547,43 @@ body {
 }
 
 .processor-view {
-    padding: 20px;
-
-    .processor-row {
-        display: flex;
-
-        .processor-button {
-            margin-left: 10px;
-        }
+    .traffic-group-header {
+        background-color: #eee;
     }
 
-    .processor-name {
-        margin: 20px 0 5px 0;
-    }
-
-    .warning {
-        color: red;
-        margin: 0;
-    }
-
-    .processor-ns {
-        margin: 5px 0;
+    .processor-config {
+        padding: 5px;
     }
 
     .processor-url {
-        font-size: 14px;
+        font-size: 12px;
         font-family: sans-serif;
-        display: inline-block;
-        padding: 10px;
-        border: 1px solid #aaa;
-        box-sizing: border-box;
-        height: 40px;
-        flex: 1;
+        color: blue;
 
         &:visited {
             color: blue;
         }
     }
 
-    .processor-url-display {
-        background-color: #dfdfdf;
+    .processor-url-input {
+        width: 100%;
+        box-sizing: border-box;
+        height: 25px;
+        font-size: 12px;
     }
 
-    .processor-button {
-        border: 1px solid #777;
-        border-radius: 2px;
-        padding: 0 6px;
-        outline: none;
-        height: 40px;
-        line-height: 40px;
-        cursor: pointer;
-        font-size: 14px;
-        min-width: 70px;
+    .processor-ns-input {
+        height: 20px;
+        width: 150px;
+        box-sizing: border-box;
     }
 
-    .add-processor {
-        margin-top: 40px;
+    .invalid {
+        color: red;
     }
 
-    .add-processor-ns {
-        border: 1px solid #aaa;
-        padding: 0 10px;
-        font-size: inherit;
+    .processor-error {
+        padding: 5px;
+        color: red;
     }
 }

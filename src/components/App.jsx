@@ -54,7 +54,7 @@ class App extends React.Component {
 
     renderRuleView() {
         return (
-            <div className='rule-view'>
+            <div className='rule-view config-view'>
                 <Rules/>
             </div>
         );
@@ -62,7 +62,7 @@ class App extends React.Component {
 
     renderProcessorView() {
         return (
-            <div className='processor-view'>
+            <div className='processor-view config-view'>
                 <Processors/>
             </div>
         );

@@ -98,7 +98,7 @@ class TrafficInfo extends React.Component {
         const {urlExpanded} = this.state;
 
         return (
-            <div className='section'>
+            <div className='pane-section'>
                 <h4 className='section-header'>URL
                     {
                         urlExpanded ?
@@ -115,7 +115,7 @@ class TrafficInfo extends React.Component {
         const {ruleIds, ruleInfos, trafficInfo} = this.props;
 
         return (
-            <div className='section'>
+            <div className='pane-section'>
                 <h4 className='section-header'>Labels</h4>
                 {ruleIds.map((ruleId, ruleIndex) => {
                     const ruleInfo = ruleInfos[ruleId];
@@ -140,7 +140,7 @@ class TrafficInfo extends React.Component {
         }
 
         return (
-            <div className='section'>
+            <div className='pane-section'>
                 <h4 className='section-header'>Rule</h4>
                 <select className='section-select rule-select' defaultValue={selectedRuleId} onChange={this.selectRuleId} ref={(input) => {this.ruleIdInput = input;}}>
                     {ruleIds.map((ruleId, ruleIndex) => {
@@ -166,39 +166,33 @@ class TrafficInfo extends React.Component {
             return null;
         }
 
-        return (
-            <div key={selectedRuleId}>
-                {ruleInfos[selectedRuleId].namespaces.map((namespace) => {
-                    const processedData = trafficInfo.processed[namespace];
-                    const sortedNames = processedData && Object.keys(processedData).sort();
+        return ruleInfos[selectedRuleId].namespaces.map((namespace) => {
+            const processedData = trafficInfo.processed[namespace];
+            const sortedNames = processedData && Object.keys(processedData).sort();
 
-                    if (!sortedNames || sortedNames.length === 0) {
-                        return null;
-                    }
+            if (!sortedNames || sortedNames.length === 0) {
+                return null;
+            }
 
-                    return (
-                        <div className='section' key={namespace}>
-                            <div className='section'>
-                                <h4 className='section-header'>Data - {processors[namespace].name}</h4>
-                                <ul className='section-list'>
-                                    {sortedNames.map((name) => {
-                                        const selected = getRuleDataIndex(ruleInfo, namespace, name) >= 0;
+            return (
+                <div className='pane-section' key={selectedRuleId + '-' + namespace}>
+                    <h4 className='section-header'>Data - {processors[namespace].name}</h4>
+                    <ul className='section-list'>
+                        {sortedNames.map((name) => {
+                            const selected = getRuleDataIndex(ruleInfo, namespace, name) >= 0;
 
-                                        return (
-                                            <li className='section-flex-row' key={name}>
-                                                <SimpleInput className='diver-check' type='checkbox' defaultChecked={selected} handleChange={this.toggleData} params={{name, namespace, ruleId: ruleInfo.id}}/>
-                                                <h5 className='section-label data-name-label'>{name}</h5>
-                                                <div className='section-label data-value-label'>{processedData[name]}</div>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        );
+                            return (
+                                <li className='section-flex-row' key={name}>
+                                    <SimpleInput className='diver-check' type='checkbox' defaultChecked={selected} handleChange={this.toggleData} params={{name, namespace, ruleId: ruleInfo.id}}/>
+                                    <h5 className='section-label data-name-label'>{name}</h5>
+                                    <div className='section-label data-value-label'>{processedData[name]}</div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            );
+        });
     }
 
     render() {
@@ -209,17 +203,15 @@ class TrafficInfo extends React.Component {
         }
 
         return (
-            <div>
-                <div className='info-pane-menu'>
-                    <button className='info-pane-menu-button diver-button' onClick={this.exportTraffic}>&#8682; Export</button>
-                    <button className='info-pane-menu-button diver-button' onClick={this.deselectTraffic}>&#10132; Close</button>
+            <div className='traffic-info'>
+                <div className='pane-section pane-top-menu pane-top-menu-right'>
+                    <button className='pane-top-menu-button diver-button' onClick={this.exportTraffic}>&#8682; Export</button>
+                    <button className='pane-top-menu-button diver-button' onClick={this.deselectTraffic}>&#10132; Close</button>
                 </div>
-                <div className='traffic-info info-pane-content'>
-                    {this.renderUrl()}
-                    {this.renderLabels()}
-                    {this.renderRules()}
-                    {this.renderData()}
-                </div>
+                {this.renderUrl()}
+                {this.renderLabels()}
+                {this.renderRules()}
+                {this.renderData()}
             </div>
         );
     }
