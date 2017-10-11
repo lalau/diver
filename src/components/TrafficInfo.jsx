@@ -6,7 +6,7 @@ import classnames from 'classnames';
 import SimpleInput from './partials/SimpleInput.jsx';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
 import updateRuleDataActionCreator from '../actions/update-rule-data-action-creator';
-import {getRuleDataIndex, getTrafficLabel} from '../lib/util';
+import {formatDataValue, getRuleDataIndex, getTrafficLabel} from '../lib/util';
 
 class TrafficInfo extends React.Component {
     constructor(props) {
@@ -185,7 +185,7 @@ class TrafficInfo extends React.Component {
                                 <li className='section-flex-row' key={name}>
                                     <SimpleInput className='diver-check' type='checkbox' defaultChecked={selected} handleChange={this.toggleData} params={{name, namespace, ruleId: ruleInfo.id}}/>
                                     <h5 className='section-label data-name-label'>{name}</h5>
-                                    <div className='section-label data-value-label'>{processedData[name]}</div>
+                                    <div className='section-label data-value-label'>{formatDataValue(processedData[name])}</div>
                                 </li>
                             );
                         })}

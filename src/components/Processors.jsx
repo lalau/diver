@@ -110,7 +110,7 @@ class Processors extends React.Component {
             key: 'message',
             value: {
                 type: 'warning',
-                key: 'RELOAD_FOR_PROCESSORS'
+                key: 'RELOAD'
             }
         });
     }

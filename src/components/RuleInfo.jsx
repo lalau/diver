@@ -90,7 +90,7 @@ class RuleInfo extends React.Component {
             key: 'message',
             value: {
                 type: 'warning',
-                key: 'RELOAD_FOR_PROCESSORS'
+                key: 'RELOAD'
             }
         });
     }
@@ -135,6 +135,7 @@ class RuleInfo extends React.Component {
             filterIndex: filterIndex,
             [changeTarget]: newValue
         });
+        this.showReloadMessage();
     }
 
     removeFilter({filterIndex}) {
@@ -144,6 +145,7 @@ class RuleInfo extends React.Component {
             ruleId: ruleInfo.id,
             filterIndex
         });
+        this.showReloadMessage();
     }
 
     addFilter() {
@@ -153,6 +155,7 @@ class RuleInfo extends React.Component {
             ruleId: ruleInfo.id,
             filterName: this.addFilterSelect.value
         });
+        this.showReloadMessage();
 
         this.addFilterSelect.value = '';
     }
@@ -339,6 +342,7 @@ class RuleInfo extends React.Component {
                         <option value='has-response-header'>has-response-header</option>
                         <option value='method'>method</option>
                         <option value='mime-type'>mime-type</option>
+                        <option value='path'>path</option>
                         <option value='status-code'>status-code</option>
                         <option value='larger-than'>larger-than</option>
                     </select>
@@ -451,10 +455,18 @@ class RuleInfo extends React.Component {
     renderData(namespace) {
         const {processors, ruleInfo, trafficGroup} = this.props;
         const data = ruleInfo.data[namespace];
-        const dataKeys = trafficGroup.dataKeys[namespace];
+        const trafficDataKeys = trafficGroup.dataKeys[namespace] || [];
+        const ruleDataKeys = ruleInfo.dataOrder.filter(({namespace: dataNamespace}) => dataNamespace === namespace).map(({name}) => name);
 
-        if (!dataKeys || dataKeys.length === 0) {
+        if (trafficDataKeys.length === 0 && ruleDataKeys.length === 0) {
             return null;
+        }
+
+        // include data keys in rule but not in the traffic, only sort them when there are keys not present in the traffic keys since traffic keys are already sorted
+        const dataKeys = ruleDataKeys.length > 0 ? [...new window.Set(trafficDataKeys.concat(ruleDataKeys))] : trafficDataKeys;
+
+        if (dataKeys.length > trafficDataKeys.length) {
+            dataKeys.sort();
         }
 
         return (

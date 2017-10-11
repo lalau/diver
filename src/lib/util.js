@@ -8,16 +8,18 @@ export const isMatchingTraffic = (trafficInfo, ruleInfo) => {
 
         if (name === 'domain') {
             return testStr(trafficInfo.hostname, value);
+        } else if (name === 'has-response-header') {
+            return isMatchingHeader(trafficInfo.traffic.response.headers, value);
         } else if (name ==='method') {
             return testStr(trafficInfo.traffic.request.method, value);
         } else if (name === 'mime-type') {
             return testStr(trafficInfo.traffic.response.content.mimeType, value);
+        } else if (name === 'path') {
+            return testStr(trafficInfo.path, value);
         } else if (name === 'status-code') {
             return testStr(trafficInfo.traffic.response.status + '', value);
         } else if (name === 'larger-than') {
             return trafficInfo.traffic.response.bodySize > translateSize(value);
-        } else if (name === 'has-response-header') {
-            return isMatchingHeader(trafficInfo.traffic.response.headers, value);
         }
 
         return true;
@@ -73,7 +75,7 @@ const translateSize = (s) => {
 export const getRandomColor = () => {
     let color = '';
     for (let i = 0; i < 3; i++) {
-        const component = Math.floor(Math.random() * 85) + 85;
+        const component = Math.floor(Math.random() * 86) + 128;
         const hex = component.toString(16);
         color += hex.length === 1 ? ('0' + hex) : hex;
     }
@@ -81,6 +83,12 @@ export const getRandomColor = () => {
 };
 
 export const testStr = (str, rule) => {
+    if (Array.isArray(str)) {
+        return str.some((s) => {
+            return testStr(s, rule);
+        });
+    }
+
     if (typeof str !== 'string') {
         return false;
     }
@@ -114,7 +122,7 @@ export const getWidthOfTableText = (txt) => {
         getWidthOfTableText.ctx = getWidthOfTableText.c.getContext('2d');
     }
     getWidthOfTableText.ctx.font = '12px sans-serif';
-    return getWidthOfTableText.ctx.measureText(txt).width;
+    return getWidthOfTableText.ctx.measureText(formatDataValue(txt)).width;
 };
 
 export const getRuleDataIndex = (ruleInfo, namespace, name) => {
@@ -134,4 +142,36 @@ export const getTrafficLabel = (trafficInfo, labels) => {
     });
 
     return label;
+};
+
+export const formatDataValue = (value) => {
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((v, index) => {
+            return '[' + (index + 1) + '] ' + v;
+        }).join(' ');
+    }
+
+    return '';
+};
+
+export const validateProcessedData = (obj) => {
+    if (!obj || typeof obj !== 'object') {
+        return {};
+    }
+
+    Object.keys(obj).forEach((key) => {
+        const value = obj[key];
+
+        if (typeof value === 'string' || (Array.isArray(value) && value.every(v => typeof v === 'string'))) {
+            return;
+        }
+
+        delete obj[key];
+    });
+
+    return obj;
 };

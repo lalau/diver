@@ -1,6 +1,6 @@
 import URL from 'url';
 import update from 'immutability-helper';
-import {isMatchingTraffic} from '../lib/util';
+import {isMatchingTraffic, validateProcessedData} from '../lib/util';
 
 const DEFAULT_STATE = {
     filters: {
@@ -8,6 +8,7 @@ const DEFAULT_STATE = {
         'has-response-header': [],
         method: [],
         'mime-type': [],
+        path: [],
         'status-code': [],
         'larger-than': ['100', '10k', '1M']
     },
@@ -174,6 +175,7 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
         index,
         traffic,
         hostname: parsedUrl.hostname,
+        path: parsedUrl.path,
         port: parsedUrl.port,
         processed: {},
         ruleIds: []
@@ -204,7 +206,16 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
             // and only execute once if a traffic matches two rules using the same processor
             if (!trafficInfo.processed[namespace]) {
                 const {process} = processors[namespace] || {};
-                trafficInfo.processed[namespace] = typeof process === 'function' ? process(traffic) : {};
+                let processedData = {};
+
+                if (typeof process === 'function') {
+                    try {
+                        processedData = process(traffic);
+                    } catch (e) {
+                        // fail silently
+                    }
+                }
+                trafficInfo.processed[namespace] = validateProcessedData(processedData);
             }
 
             Object.keys(trafficInfo.processed[namespace] || {}).forEach((dataKey) => {

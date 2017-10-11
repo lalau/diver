@@ -12,7 +12,7 @@ import SimpleButton from './partials/SimpleButton.jsx';
 import SimpleInput from './partials/SimpleInput.jsx';
 import SimpleSelect from './partials/SimpleSelect.jsx';
 import DataHeader from './partials/DataHeader.jsx';
-import {getColumnWidth, getTrafficLabel} from '../lib/util';
+import {formatDataValue, getColumnWidth, getTrafficLabel} from '../lib/util';
 
 const maxDataColumnWidth = 300;
 const dataHeaderPadding = 46;
@@ -237,6 +237,7 @@ class Traffics extends React.Component {
                 Header: <DataHeader text={desc} onReorder={this.reorderData} reorderLeft={reorderLeft} reorderRight={reorderRight} params={{ruleId: ruleInfo.id, dataIndex}}/>,
                 headerClassName: 'data-header-wrapper',
                 accessor,
+                Cell: props => formatDataValue(props.value),
                 width: Math.min(maxDataColumnWidth, getColumnWidth(data, accessor, desc, dataColumnPadding, dataHeaderPadding))
             });
         });
