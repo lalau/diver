@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Diver - Web Traffic Monitor Tool",
-    "version": "0.0.2",
+    "version": "1.0.0",
 
     "description": "Diver is a Chrome extension that allows you to monitor the network requests on a web page. It helps you to monitor specific requests based on the your own rules and perform custom processing to present the requests in a manageable and readable format.",
     "icons": {
