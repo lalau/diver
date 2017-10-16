@@ -11,12 +11,24 @@ class Rules extends React.Component {
 
         this.state = {
             importErrors: null,
-            selectedRuleId: props.ruleIds.length > 0 ? props.ruleIds[0] : null
+            selectedRuleId: this.getFirstRuleId(props)
         };
         this.dismissImportError = this.dismissImportError.bind(this);
         this.exportRule = this.exportRule.bind(this);
         this.importRule = this.importRule.bind(this);
         this.selectRule = this.selectRule.bind(this);
+    }
+
+    getFirstRuleId({ruleIds}) {
+        return ruleIds.length > 0 ? ruleIds[0] : null;
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (!this.state.selectedRuleId && this.props.ruleIds !== nextProps.ruleIds) {
+            this.setState({
+                selectedRuleId: this.getFirstRuleId(nextProps)
+            });
+        }
     }
 
     dismissImportError() {
@@ -112,6 +124,10 @@ class Rules extends React.Component {
 
     renderRulePane() {
         const ruleInfo = this.props.ruleInfos[this.state.selectedRuleId];
+
+        if (!ruleInfo) {
+            return null;
+        }
 
         return (
             <div className='content-pane'>

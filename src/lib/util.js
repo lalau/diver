@@ -19,7 +19,7 @@ export const isMatchingTraffic = (trafficInfo, ruleInfo) => {
         } else if (name === 'status-code') {
             return testStr(trafficInfo.traffic.response.status + '', value);
         } else if (name === 'larger-than') {
-            return trafficInfo.traffic.response.bodySize > translateSize(value);
+            return trafficInfo.traffic.response.content.size > translateSize(value);
         }
 
         return true;
@@ -110,7 +110,8 @@ export const getColumnWidth = (data, accessor, headerText, columnPadding = 0, he
     let maxWidth = getWidthOfTableText(headerText) + (columnPadding > headerPadding ? columnPadding : headerPadding);
 
     for (let i = 0; i < data.length; i++) {
-        maxWidth = Math.max(maxWidth, getWidthOfTableText(get(data, i + '.' + accessor, '')) + columnPadding);
+        const text = typeof accessor === 'function' ? accessor(data[i]) : get(data, i + '.' + accessor);
+        maxWidth = Math.max(maxWidth, getWidthOfTableText(text) + columnPadding);
     }
 
     return maxWidth;

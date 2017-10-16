@@ -27,8 +27,8 @@ class Processors extends React.Component {
         this.updateProcessor = this.updateProcessor.bind(this);
     }
 
-    getFirstProcessorNamespace() {
-        return Object.keys(this.props.processors)[0];
+    getFirstProcessorNamespace(notNamespace) {
+        return Object.keys(this.props.processors).filter(namespace => namespace != notNamespace)[0];
     }
 
     validateUrl(url) {
@@ -80,7 +80,7 @@ class Processors extends React.Component {
         this.setState({
             edit: false,
             errorKey: null,
-            selectedNamespace: this.getFirstProcessorNamespace()
+            selectedNamespace: this.getFirstProcessorNamespace(selectedNamespace)
         });
     }
 

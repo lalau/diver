@@ -175,7 +175,7 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
         index,
         traffic,
         hostname: parsedUrl.hostname,
-        path: parsedUrl.path,
+        path: parsedUrl.pathname,
         port: parsedUrl.port,
         processed: {},
         ruleIds: []
@@ -200,6 +200,11 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
         trafficInfo.ruleIds.push(ruleInfo.id);
 
         ruleInfo.namespaces.forEach((namespace) => {
+            // skip if it's a new namespace
+            if (!dataKeys[namespace]) {
+                return;
+            }
+
             const newNamespaceDataKeys = [];
 
             // make sure we only execute processor needed by the rule matching the traffic

@@ -13,6 +13,7 @@ import SimpleInput from './partials/SimpleInput.jsx';
 import SimpleSelect from './partials/SimpleSelect.jsx';
 import DataHeader from './partials/DataHeader.jsx';
 import {formatDataValue, getColumnWidth, getTrafficLabel} from '../lib/util';
+import get from 'lodash/get';
 
 const maxDataColumnWidth = 300;
 const dataHeaderPadding = 46;
@@ -229,11 +230,12 @@ class Traffics extends React.Component {
         dataOrder.forEach(({namespace, name}, dataIndex) => {
             const dataMeta = ruleInfo.data[namespace][name];
             const desc = dataMeta.desc || name;
-            const accessor = 'trafficInfo.processed.' + namespace + '.' + name;
+            const accessor = d => get(d, ['trafficInfo', 'processed', namespace,  name]);
             const reorderLeft = dataIndex > 0;
             const reorderRight = dataIndex < dataOrder.length - 1;
 
             columns.push({
+                id: namespace + '-' + name,
                 Header: <DataHeader text={desc} onReorder={this.reorderData} reorderLeft={reorderLeft} reorderRight={reorderRight} params={{ruleId: ruleInfo.id, dataIndex}}/>,
                 headerClassName: 'data-header-wrapper',
                 accessor,
