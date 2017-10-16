@@ -27,3 +27,7 @@ const validateRule = ({type, payload}, sender, sendResponse) => {
 };
 
 chrome.runtime.onMessage.addListener(handleMessage);
+
+chrome.browserAction.onClicked.addListener(() => {
+    chrome.tabs.create({url: 'https://github.com/lalau/diver-docs/blob/master/diver.md'});
+});
