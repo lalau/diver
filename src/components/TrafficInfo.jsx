@@ -14,6 +14,7 @@ class TrafficInfo extends React.Component {
 
         this.state = {
             selectedRuleId: this.getFirstMatchingRuleId(),
+            showUrlExpander: false,
             urlExpanded: false
         };
         this.collapseUrl = this.toggleUrlExpand.bind(this, false);
@@ -22,6 +23,16 @@ class TrafficInfo extends React.Component {
         this.exportTraffic = this.exportTraffic.bind(this);
         this.selectRuleId = this.selectRuleId.bind(this);
         this.toggleData = this.toggleData.bind(this);
+    }
+
+    componentDidMount() {
+        const {clientHeight, scrollHeight} = this.urlValue;
+
+        if (scrollHeight > clientHeight) {
+            this.setState({
+                showUrlExpander: true
+            });
+        }
     }
 
     componentWillReceiveProps(nextProps) {
@@ -95,18 +106,23 @@ class TrafficInfo extends React.Component {
 
     renderUrl() {
         const {trafficInfo} = this.props;
-        const {urlExpanded} = this.state;
+        const {showUrlExpander, urlExpanded} = this.state;
+        const {method, url} = trafficInfo.traffic.request;
+        const showGo = method === 'GET' && url.indexOf('data:') !== 0;
 
         return (
             <div className='pane-section'>
-                <h4 className='section-header'>URL
+                <h4 className='section-header'>URL ({method})
+                    {showGo ? <a href={url} target='_blank' className='info-header-button diver-button'>&#10150; Go</a> : null}
                     {
-                        urlExpanded ?
-                            <button className='info-header-button diver-button' onClick={this.collapseUrl}>&#9650; Collapse</button> :
-                            <button className='info-header-button diver-button' onClick={this.expandUrl}>&#9660; Expand</button>
+                        showUrlExpander ? (
+                            urlExpanded ?
+                                <button className='info-header-button diver-button' onClick={this.collapseUrl}>&#9650; Collapse</button> :
+                                <button className='info-header-button diver-button' onClick={this.expandUrl}>&#9660; Expand</button>
+                        ) : null
                     }
                 </h4>
-                <div className={classnames('info-value url-value', {collapsed: !urlExpanded})}>{trafficInfo.traffic.request.url}</div>
+                <div className={classnames('info-value url-value', {collapsed: !urlExpanded})} ref={(node) => {this.urlValue = node;}}>{url}</div>
             </div>
         );
     }

@@ -159,6 +159,9 @@ body {
     display: inline-block;
     box-sizing: border-box;
     font-size: 11px;
+    color: #000;
+    text-decoration: none;
+    font-weight: normal;
 
     &.selected {
         font-weight: bold;
@@ -445,6 +448,7 @@ body {
 
 .traffic-info {
     .info-header-button {
+        margin-left: 5px;
         float: right;
     }
 
