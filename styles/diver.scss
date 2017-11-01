@@ -7,8 +7,12 @@ body {
     height: 100vh;
     box-sizing: border-box;
 
-    &.message-bar-shown {
+    &.message-bar-shown, &.hint-bar-shown {
         padding-top: 50px;
+    }
+
+    &.message-bar-shown.hint-bar-shown {
+        padding-top: 75px;
     }
 }
 
@@ -30,14 +34,32 @@ body {
     top: 25px;
     padding: 0 10px;
 
-    .message {
-        margin: 0;
-        line-height: 25px;
-    }
-
     .warning {
         color: red;
     }
+}
+
+.hint-bar-shown .message-bar {
+    top: 50px;
+}
+
+.hint-bar {
+    top: 25px;
+    padding-left: 10px;
+
+    .hint {
+        color: blue;
+    }
+}
+
+.tutorial-link {
+    margin-right: 5px;
+    color: blue;
+}
+
+.message {
+    margin: 0;
+    line-height: 25px;
 }
 
 .menu-button {
@@ -50,6 +72,7 @@ body {
     cursor: pointer;
     color: #5a5a5a;
     outline: none;
+    text-decoration: none;
 
     &.selected {
         border-bottom: 2px solid cornflowerblue;
@@ -60,7 +83,7 @@ body {
         background-color: #e5e5e5;
     }
 
-    &.reset-button {
+    &.side-button {
         float: right;
     }
 }

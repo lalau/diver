@@ -11,6 +11,9 @@ import Processors from './Processors.jsx';
 import messages from '../strings/messages';
 import {bindActionCreators} from 'redux';
 import resetRulesActionCreator from '../actions/reset-rules-action-creator';
+import updateAppStateActionCreator from '../actions/update-app-state-action-creator';
+import tutorials from '../lib/tutorials';
+import update from 'immutability-helper';
 
 class App extends React.Component {
     constructor(props) {
@@ -19,6 +22,7 @@ class App extends React.Component {
         this.state = {
             view: 'traffic'
         };
+        this.dismissViewHint = this.dismissViewHint.bind(this);
         this.resetRules = this.resetRules.bind(this);
         this.toggleRuleview = this.toggleView.bind(this, 'rule');
         this.toggleTrafficview = this.toggleView.bind(this, 'traffic');
@@ -29,6 +33,21 @@ class App extends React.Component {
         if (window.confirm('Only reset rules if the extension is breaking. Proceed?')) {
             this.props.resetRulesAction();
         }
+    }
+
+    dismissViewHint() {
+        const {viewHints} = this.props;
+        const {view} = this.state;
+
+        this.props.updateAppStateAction({
+            scope: 'app',
+            key: 'viewHints',
+            value: update(viewHints, {
+                [view]: {
+                    $set: false
+                }
+            })
+        });
     }
 
     toggleView(view) {
@@ -68,6 +87,29 @@ class App extends React.Component {
         );
     }
 
+    renderHintBar(viewHint) {
+        if (!viewHint) {
+            return null;
+        }
+
+        return (
+            <div className='app-bar hint-bar'>
+                <p className='message hint'>&#8252; {viewHint} {this.renderTutorials()}
+                    <button className='menu-button side-button' onClick={this.dismissViewHint}>Dismiss</button>
+                </p>
+            </div>
+        );
+    }
+
+    renderTutorials() {
+        const {view} = this.state;
+        const viewTutorials = tutorials[view];
+
+        return viewTutorials.map(({name = 'Tutorial', url}) => {
+            return <a key={name} href={url} target='_blank' className='tutorial-link'>{name}</a>;
+        });
+    }
+
     renderMessageBar() {
         const {message} = this.props;
         const string = message && messages[message.key];
@@ -85,17 +127,20 @@ class App extends React.Component {
 
     render() {
         const {view} = this.state;
-        const {message} = this.props;
+        const {message, viewHints} = this.props;
         const hasMessage = !!(message && messages[message.key]);
+        const viewHint = viewHints && viewHints[view] && messages['FIRST_TIME_VIEW_' + view.toUpperCase()];
 
         return (
-            <div className={classnames('diver-app', {'message-bar-shown': hasMessage})}>
+            <div className={classnames('diver-app', {'message-bar-shown': hasMessage, 'hint-bar-shown': viewHint})}>
                 <div className='app-bar menu-bar'>
                     <button className={classnames('menu-button', {'selected': view === 'traffic'})} onClick={this.toggleTrafficview}>&#9783; Traffics</button>
                     <button className={classnames('menu-button', {'selected': view === 'rule'})} onClick={this.toggleRuleview}>&#10040; Rules</button>
                     <button className={classnames('menu-button', {'selected': view === 'processor'})} onClick={this.toggleProcessorview}>&#10148; Processors</button>
-                    <button className='menu-button reset-button' onClick={this.resetRules}>Reset Rules</button>
+                    <button className='menu-button side-button' onClick={this.resetRules}>Reset Rules</button>
+                    <a href={tutorials.index} target='_blank' className='menu-button side-button'>Tutorials</a>
                 </div>
+                {this.renderHintBar(viewHint)}
                 {this.renderMessageBar()}
                 {view === 'traffic' ? this.renderTrafficView() : null}
                 {view === 'rule' ? this.renderRuleView() : null}
@@ -114,13 +159,15 @@ const mapStateToProps = (state) => {
     return {
         selectedRuleId: state.app.selectedRuleId,
         selectedTrafficIndex: state.app.selectedTrafficIndex,
-        message: state.app.state.page.message
+        message: state.app.state.page.message,
+        viewHints: state.app.state.app.viewHints
     };
 };
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        resetRulesAction: bindActionCreators(resetRulesActionCreator, dispatch)
+        resetRulesAction: bindActionCreators(resetRulesActionCreator, dispatch),
+        updateAppStateAction: bindActionCreators(updateAppStateActionCreator, dispatch)
     };
 };
 

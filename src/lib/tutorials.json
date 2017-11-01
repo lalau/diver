@@ -1,0 +1,23 @@
+{
+    "index": "https://github.com/lalau/diver-docs/blob/master/diver.md",
+    "traffic": [
+        {
+            "name": "Basic",
+            "url": "https://github.com/lalau/diver-docs/blob/master/request-profile-basic.md"
+        },
+        {
+            "name": "Advanced",
+            "url": "https://github.com/lalau/diver-docs/blob/master/request-profile-advanced.md"
+        }
+    ],
+    "rule": [
+        {
+            "url": "https://github.com/lalau/diver-docs/blob/master/request-profile-import-export.md"
+        }
+    ],
+    "processor": [
+        {
+            "url": "https://github.com/lalau/diver-docs/blob/master/request-processing.md"
+        }
+    ]
+}

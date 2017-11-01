@@ -1,4 +1,7 @@
 {
+    "FIRST_TIME_VIEW_PROCESSOR": "First time opening Processors view? Check out how to use it:",
+    "FIRST_TIME_VIEW_RULE": "First time opening Rules view? Check out how to use it:",
+    "FIRST_TIME_VIEW_TRAFFIC": "First time here? Check out these tutorials:",
     "PROCESSOR_ERROR": "Error loading or parsing processor",
     "PROCESSOR_NAMESPACE_EXISTED": "Processor namespace already exists.",
     "PROCESSOR_NAMESPACE_REQUIRED": "Processor namespace is required",

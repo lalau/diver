@@ -1,6 +1,7 @@
 import update from 'immutability-helper';
+import merge from 'lodash/merge';
 
-const QUERY_PROCESSOR_URL = 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.4/query.js';
+const QUERY_PROCESSOR_URL = 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.10/query.js';
 
 const DEFAULT_STATE = {
     navigateTimestamp: null,
@@ -13,6 +14,11 @@ const DEFAULT_STATE = {
 };
 
 const INIT_APP_STATE = {
+    viewHints: {
+        traffic: true,
+        rule: true,
+        processor: true
+    },
     processors: {
         query: {
             url: QUERY_PROCESSOR_URL
@@ -56,20 +62,15 @@ export default (state, {type, payload}) => {
 };
 
 const importAppState = (state, {appState}) => {
-    appState = update(appState, {
-        processors: {
-            query: {
-                url: {
-                    $set: QUERY_PROCESSOR_URL
-                }
-            }
-        }
-    });
+    const newAppState = merge({}, INIT_APP_STATE, appState);
+
+    // make sure to use the fixed query processor url
+    newAppState.processors.query.url = QUERY_PROCESSOR_URL;
 
     return update(state, {
         state: {
             app: {
-                $set: appState
+                $set: newAppState
             }
         }
     });
