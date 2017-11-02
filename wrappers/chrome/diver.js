@@ -74,6 +74,25 @@ const loadProcessors = () => {
     });
 };
 
+const utility = {
+    exportContent: ({name, content}) => {
+        chrome.runtime.sendMessage({
+            type: 'EXPORT_CONTENT',
+            payload: {name, content}
+        });
+    },
+    validateRule: ({ruleInfo, callback}) => {
+        chrome.runtime.sendMessage({
+            type: 'VALIDATE_RULE',
+            payload: {ruleInfo}
+        }, ({type, result}) => {
+            if (type === 'VALIDATE_RULE_RESULT') {
+                callback(result);
+            }
+        });
+    }
+};
+
 store.dispatch({
     type: 'INIT',
     payload: {
@@ -103,6 +122,11 @@ chrome.storage.sync.get(['diverApp', 'diverRules'], ({diverApp, diverRules}) => 
             }
         });
     }
+
+    store.dispatch({
+        type: 'IMPORT_UTILITY',
+        payload: {utility}
+    });
 
     loadProcessors();
 });

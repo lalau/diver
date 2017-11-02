@@ -10,7 +10,8 @@ const DEFAULT_STATE = {
     state: {
         app: {},
         page: {}
-    }
+    },
+    utility: {}
 };
 
 const INIT_APP_STATE = {
@@ -42,6 +43,8 @@ export default (state, {type, payload}) => {
     switch (type) {
     case 'IMPORT_APP_STATE':
         return importAppState(state, payload);
+    case 'IMPORT_UTILITY':
+        return importUtility(state, payload);
     case 'INIT':
         return init(state, payload);
     case 'INIT_APP_STATE':
@@ -72,6 +75,14 @@ const importAppState = (state, {appState}) => {
             app: {
                 $set: newAppState
             }
+        }
+    });
+};
+
+const importUtility = (state, {utility}) => {
+    return update(state, {
+        utility: {
+            $set: utility
         }
     });
 };

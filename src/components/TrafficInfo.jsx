@@ -49,14 +49,11 @@ class TrafficInfo extends React.Component {
     }
 
     exportTraffic() {
-        const {trafficInfo} = this.props;
+        const {trafficInfo, utility} = this.props;
 
-        chrome.runtime.sendMessage({
-            type: 'EXPORT_CONTENT',
-            payload: {
-                content: trafficInfo.traffic,
-                name: trafficInfo.hostname + '-' + trafficInfo.index
-            }
+        utility.exportContent({
+            name: trafficInfo.hostname + '-' + trafficInfo.index,
+            content: trafficInfo.traffic
         });
     }
 
@@ -247,7 +244,8 @@ const mapStateToProps = (state) => {
         ruleIds: state.rules.ruleIds,
         ruleInfos: state.rules.ruleInfos,
         trafficGroups: state.traffics.trafficGroups,
-        trafficInfo: state.traffics.trafficInfos[state.app.selectedTrafficIndex]
+        trafficInfo: state.traffics.trafficInfos[state.app.selectedTrafficIndex],
+        utility: state.app.utility
     };
 };
 

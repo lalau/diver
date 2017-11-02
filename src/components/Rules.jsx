@@ -39,19 +39,17 @@ class Rules extends React.Component {
 
     exportRule() {
         const {selectedRuleId} = this.state;
-        const ruleInfo = this.props.ruleInfos[selectedRuleId];
+        const {ruleInfos, utility} = this.props;
+        const ruleInfo = ruleInfos[selectedRuleId];
 
-        chrome.runtime.sendMessage({
-            type: 'EXPORT_CONTENT',
-            payload: {
-                content: ruleInfo,
-                name: selectedRuleId
-            }
+        utility.exportContent({
+            name: selectedRuleId,
+            content: ruleInfo
         });
     }
 
     importRule({target}) {
-        const {importRuleInfoAction} = this.props;
+        const {importRuleInfoAction, utility} = this.props;
         const file = target.files[0];
         target.value = '';
 
@@ -63,11 +61,9 @@ class Rules extends React.Component {
         reader.onload = ({target}) => {
             try {
                 const ruleInfo = JSON.parse(target.result);
-                chrome.runtime.sendMessage({
-                    type: 'VALIDATE_RULE',
-                    payload: {ruleInfo}
-                }, ({type, result}) => {
-                    if (type === 'VALIDATE_RULE_RESULT') {
+                utility.validateRule({
+                    ruleInfo,
+                    callback: (result) => {
                         if (result.errors) {
                             this.setState({importErrors: result.errors});
                         } else {
@@ -164,7 +160,8 @@ Rules.propTypes = {
 const mapStateToProps = (state) => {
     return {
         ruleIds: state.rules.ruleIds,
-        ruleInfos: state.rules.ruleInfos
+        ruleInfos: state.rules.ruleInfos,
+        utility: state.app.utility
     };
 };
 
