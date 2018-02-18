@@ -4,6 +4,8 @@ const handleMessage = (event, sender, sendResponse) => {
         return exportContent(event, sender, sendResponse);
     case 'VALIDATE_RULE':
         return validateRule(event, sender, sendResponse);
+    case 'NAVIGATED':
+        return handleNavigated(event);
     }
 };
 
@@ -26,8 +28,22 @@ const validateRule = ({type, payload}, sender, sendResponse) => {
     return true;
 };
 
+const handleNavigated = () => {
+    _gaq.push(['_trackPageview']);
+};
+
 chrome.runtime.onMessage.addListener(handleMessage);
 
 chrome.browserAction.onClicked.addListener(() => {
     chrome.tabs.create({url: 'https://github.com/lalau/diver-docs/blob/master/diver.md'});
 });
+
+
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-114277505-1']);
+
+(function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = 'https://ssl.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
