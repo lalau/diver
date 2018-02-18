@@ -2,10 +2,12 @@
     "FIRST_TIME_VIEW_PROCESSOR": "First time opening Processors view? Check out how to use it:",
     "FIRST_TIME_VIEW_RULE": "First time opening Rules view? Check out how to use it:",
     "FIRST_TIME_VIEW_TRAFFIC": "First time here? Check out these tutorials:",
+    "PROCESSOR_CODE_REQUIRED": "Processor code is required",
     "PROCESSOR_ERROR": "Error loading or parsing processor",
     "PROCESSOR_NAMESPACE_EXISTED": "Processor namespace already exists.",
     "PROCESSOR_NAMESPACE_REQUIRED": "Processor namespace is required",
     "PROCESSOR_URL_INVALID": "Processor url is invalid",
     "PROCESSOR_URL_REQUIRED": "Processor url is requried",
-    "RELOAD": "Reload page after updating filters or processors to apply the changes"
+    "RELOAD": "Reload page after updating filters or processors to re-process the traffics",
+    "UPDATED_TO_V2": "Thanks for updating to version 2. Check out the major changes to custom processing:"
 }

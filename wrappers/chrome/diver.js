@@ -8,6 +8,8 @@ import {Provider} from 'react-redux';
 import App from '../../src/components/App.jsx';
 import reducer from '../../src/reducers/';
 import update from 'immutability-helper';
+import {PROCESS_STATE} from '../../src/reducers/traffics';
+import get from 'lodash/get';
 
 window.diver = {};
 
@@ -16,38 +18,84 @@ const store = createStore(reducer, {});
 const loadProcessors = () => {
     const state = store.getState();
     const processors = state.app.state.app.processors;
+    const processorsSession = state.app.state.session.processors;
 
-    if (!processors) {
+    if (!processors || !processorsSession) {
         return;
     }
 
-    window.diver.processors = {};
-
     const loadPromises = Object.keys(processors).map((namespace) => {
-        const {name, process, url} = processors[namespace];
+        const {url, code, isLocal} = processors[namespace];
+        const {loaded} = processorsSession[namespace];
 
-        if (name && typeof process === 'function') {
+        if (loaded) {
             return null;
         }
 
+        if (isLocal) {
+            return new window.Promise((resolve) => {
+                background.initProcessor({
+                    namespace,
+                    getProcessor: code,
+                    callback: resolve
+                });
+            });
+        }
+
         return new window.Promise((resolve) => {
-            const script = document.createElement('script');
-            script.setAttribute('src', url);
-            script.onload = script.onerror = resolve;
-            document.head.appendChild(script);
+            background.removeProcessor({namespace});
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    background.initProcessor({
+                        namespace,
+                        getProcessor: xhr.responseText,
+                        callback: resolve
+                    });
+                }
+            };
+            xhr.send();
         });
     });
 
-    window.Promise.all(loadPromises).then(() => {
+    store.dispatch({
+        type: 'UPDATE_APP_STATE',
+        payload: {
+            scope: 'session',
+            key: 'processorsLoading',
+            value: true
+        }
+    });
+
+    window.Promise.all(loadPromises).then((results) => {
+        store.dispatch({
+            type: 'UPDATE_APP_STATE',
+            payload: {
+                scope: 'session',
+                key: 'processorsUpdated',
+                value: false
+            }
+        });
+
         const processorsUpdate = {};
 
-        Object.keys(processors).map((namespace) => {
-            const processor = window.diver.processors[namespace];
-
-            if (processor && processor.name && processor.namespace === namespace && processor.process) {
-                processor.url = processors[namespace].url;
-                processorsUpdate[namespace] = {
-                    $set: processor
+        results.forEach((result) => {
+            if (result && result.namespace) {
+                processorsUpdate[result.namespace] = {
+                    name: {
+                        $set: result.name
+                    },
+                    valid: {
+                        $set: result.valid
+                    },
+                    error: {
+                        $set: result.error
+                    },
+                    loaded: {
+                        $set: true
+                    }
                 };
             }
         });
@@ -56,9 +104,9 @@ const loadProcessors = () => {
             store.dispatch({
                 type: 'UPDATE_APP_STATE',
                 payload: {
-                    scope: 'app',
+                    scope: 'session',
                     key: 'processors',
-                    value: update(processors, processorsUpdate)
+                    value: update(processorsSession, processorsUpdate)
                 }
             });
         }
@@ -66,15 +114,69 @@ const loadProcessors = () => {
         store.dispatch({
             type: 'UPDATE_APP_STATE',
             payload: {
-                scope: 'page',
-                key: 'processorsUpdated',
+                scope: 'session',
+                key: 'processorsLoading',
                 value: false
             }
         });
     });
 };
 
-const utility = {
+const reloadProcessors = () => {
+    const state = store.getState();
+    const appSession = state.app.state.session;
+    const processorsSession = appSession.processors;
+
+    if (!processorsSession || appSession.processorsLoading) {
+        return;
+    }
+
+    const processorsUpdate = {};
+
+    Object.keys(processorsSession).forEach((namespace) => {
+        processorsUpdate[namespace] = {
+            loaded: {
+                $set: false
+            }
+        };
+    });
+
+    store.dispatch({
+        type: 'UPDATE_APP_STATE',
+        payload: {
+            scope: 'session',
+            key: 'processors',
+            value: update(processorsSession, processorsUpdate)
+        }
+    });
+
+    store.dispatch({
+        type: 'UPDATE_APP_STATE',
+        payload: {
+            scope: 'session',
+            key: 'processorsUpdated',
+            value: true
+        }
+    });
+};
+
+const validateAndProcessTraffic = ({namespace, navigateTimestamp, traffic, trafficIndex, callback}) => {
+    background.validateNamespace({
+        namespace,
+        callback: ({valid}) => {
+            if (valid) {
+                background.processTraffic({namespace, navigateTimestamp, traffic, trafficIndex, callback});
+            } else {
+                reloadProcessors();
+                setImmediate(() => {
+                    callback({namespace, navigateTimestamp, trafficIndex});
+                });
+            }
+        }
+    });
+};
+
+const background = {
     exportContent: ({name, content}) => {
         chrome.runtime.sendMessage({
             type: 'EXPORT_CONTENT',
@@ -90,15 +192,46 @@ const utility = {
                 callback(result);
             }
         });
+    },
+    initProcessor: ({namespace, getProcessor, callback}) => {
+        chrome.runtime.sendMessage({
+            type: 'INIT_PROCESSOR',
+            payload: {namespace, getProcessor}
+        }, ({type, result}) => {
+            if (type === 'INIT_PROCESSOR_RESULT' && result.namespace === namespace) {
+                callback(result);
+            }
+        });
+    },
+    removeProcessor: ({namespace}) => {
+        chrome.runtime.sendMessage({
+            type: 'REMOVE_PROCESSOR',
+            payload: {namespace}
+        });
+    },
+    processTraffic: ({namespace, navigateTimestamp, traffic, trafficIndex, callback}) => {
+        chrome.runtime.sendMessage({
+            type: 'PROCESS_TRAFFIC',
+            payload: {namespace, navigateTimestamp, traffic, trafficIndex}
+        }, ({type, result}) => {
+            if (type === 'PROCESS_TRAFFIC_RESULT' && result.trafficIndex === trafficIndex && result.namespace === namespace && result.navigateTimestamp === navigateTimestamp) {
+                callback(result);
+            }
+        });
+    },
+    validateNamespace: ({namespace, callback}) => {
+        chrome.runtime.sendMessage({
+            type: 'VALIDATE_NAMESPACE',
+            payload: {namespace}
+        }, ({type, result}) => {
+            if (type === 'VALIDATE_NAMESPACE_RESULT' && result.namespace === namespace) {
+                callback(result);
+            }
+        });
     }
 };
 
-store.dispatch({
-    type: 'INIT',
-    payload: {
-        rules: store.getState().rules
-    }
-});
+store.dispatch({type: 'INIT_SESSION'});
 
 chrome.storage.sync.get(['diverApp', 'diverRules'], ({diverApp, diverRules}) => {
     if (diverApp) {
@@ -125,7 +258,9 @@ chrome.storage.sync.get(['diverApp', 'diverRules'], ({diverApp, diverRules}) => 
 
     store.dispatch({
         type: 'IMPORT_UTILITY',
-        payload: {utility}
+        payload: {
+            utility: background
+        }
     });
 
     loadProcessors();
@@ -137,7 +272,6 @@ chrome.devtools.network.onRequestFinished.addListener((traffic) => {
     store.dispatch({
         type: 'NEW_TRAFFIC',
         payload: {
-            processors: state.app.state.app.processors,
             rules: state.rules,
             traffic
         }
@@ -148,7 +282,7 @@ chrome.devtools.network.onNavigated.addListener(() => {
     const state = store.getState();
 
     store.dispatch({
-        type: 'INIT',
+        type: 'INIT_PAGE',
         payload: {
             rules: state.rules
         }
@@ -157,11 +291,70 @@ chrome.devtools.network.onNavigated.addListener(() => {
 
 const storeState = {
     app: {},
-    rules: {}
+    rules: {},
+    traffics: {}
+};
+
+const handleProcessTraffic = (trafficInfo) => {
+    const {app, rules} = store.getState();
+    const trafficIndex = trafficInfo.index;
+
+    store.dispatch({
+        type: 'PROCESSING_TRAFFIC',
+        payload: {
+            trafficIndex
+        }
+    });
+
+    const processorResults = {};
+    const processPromises = Object.keys(trafficInfo.processed).map((namespace) => {
+        processorResults[namespace] = {};
+        return new window.Promise((resolve) => {
+            validateAndProcessTraffic({
+                namespace,
+                navigateTimestamp: app.navigateTimestamp,
+                traffic: trafficInfo.traffic,
+                trafficIndex,
+                callback: ({navigateTimestamp, processed}) => {
+                    resolve({
+                        namespace,
+                        navigateTimestamp,
+                        processed
+                    });
+                }
+            });
+        });
+    });
+
+    window.Promise.all(processPromises).then((results) => {
+        const currentNavigateTimestamp = store.getState().app.navigateTimestamp;
+        const isCurrentPageProcess = results[0] && results[0].navigateTimestamp === currentNavigateTimestamp;
+        const allProcessed = results.every(({processed}) => !!processed);
+
+        // ignore process promises from the previous page
+        if (!isCurrentPageProcess || !allProcessed) {
+            return;
+        }
+
+        results.forEach(({namespace, processed}) => {
+            processorResults[namespace] = processed;
+        });
+
+        store.dispatch({
+            type: 'PROCESSED_TRAFFIC',
+            payload: {
+                trafficIndex,
+                rules,
+                processed: processorResults
+            }
+        });
+    });
 };
 
 store.subscribe(() => {
     const newState = store.getState();
+
+    // handle rules change
     const prevRules = storeState.rules;
     const nextRules = newState.rules;
 
@@ -186,13 +379,70 @@ store.subscribe(() => {
         }
     });
 
+    // handle traffics change
+    const prevTraffics = storeState.traffics.trafficInfos || [];
+    const nextTraffics = newState.traffics.trafficInfos;
+
+    storeState.traffics = newState.traffics;
+
+    if (nextTraffics.length > prevTraffics.length) {
+        for (let i = prevTraffics.length; i < nextTraffics.length; i++) {
+            const trafficInfo = nextTraffics[i];
+
+            if (trafficInfo.processState !== PROCESS_STATE.NOT_PROCESSED) {
+                continue;
+            }
+
+            handleProcessTraffic(trafficInfo);
+        }
+    }
+
+    // handle app state change
     const prevState = storeState.app.state;
     const nextState = newState.app.state;
 
     storeState.app = newState.app;
 
-    if (!(prevState && prevState.page && prevState.page.processorsUpdated) && nextState.page.processorsUpdated) {
+    if (!(prevState && prevState.session && prevState.session.processorsUpdated) && nextState.session.processorsUpdated) {
         loadProcessors();
+    }
+
+    if (prevState && prevState.session && prevState.session.processorsLoading && !nextState.session.processorsLoading) {
+        const processingTraffics = storeState.traffics.trafficInfos.filter(({processState}) => processState === PROCESS_STATE.PROCESSING);
+        processingTraffics.forEach((trafficInfo) => {
+            handleProcessTraffic(trafficInfo);
+        });
+    }
+
+    if (!get(prevState, 'page.inspectingTraffic.processingNamespace')) {
+        const inspectingTraffic = get(nextState, 'page.inspectingTraffic');
+        const processingNamespace = inspectingTraffic && inspectingTraffic.processingNamespace;
+        if (processingNamespace) {
+            validateAndProcessTraffic({
+                namespace: processingNamespace,
+                navigateTimestamp: 1,
+                traffic: inspectingTraffic.traffic,
+                trafficIndex: 1,
+                callback: ({processed, error}) => {
+                    store.dispatch({
+                        type: 'UPDATE_APP_STATE',
+                        payload: {
+                            scope: 'page',
+                            key: 'inspectingTraffic',
+                            value: update(inspectingTraffic, {
+                                $unset: ['processingNamespace'],
+                                processed: {
+                                    $set: processed
+                                },
+                                error: {
+                                    $set: error
+                                }
+                            })
+                        }
+                    });
+                }
+            });
+        }
     }
 
     if ((prevState && prevState.app) !== nextState.app) {

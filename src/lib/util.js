@@ -159,20 +159,9 @@ export const formatDataValue = (value) => {
     return '';
 };
 
-export const validateProcessedData = (obj) => {
-    if (!obj || typeof obj !== 'object') {
-        return {};
-    }
-
-    Object.keys(obj).forEach((key) => {
-        const value = obj[key];
-
-        if (typeof value === 'string' || (Array.isArray(value) && value.every(v => typeof v === 'string'))) {
-            return;
-        }
-
-        delete obj[key];
-    });
-
-    return obj;
+export const mergeProcessorsState = (processors, processorsSession) => {
+    return Object.keys(processors).reduce((mergedState, namespace) => {
+        mergedState[namespace] = Object.assign({}, processors[namespace], processorsSession[namespace]);
+        return mergedState;
+    }, {});
 };

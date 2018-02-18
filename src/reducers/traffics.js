@@ -1,6 +1,6 @@
 import URL from 'url';
 import update from 'immutability-helper';
-import {isMatchingTraffic, validateProcessedData} from '../lib/util';
+import {isMatchingTraffic} from '../lib/util';
 
 const DEFAULT_STATE = {
     filters: {
@@ -14,6 +14,12 @@ const DEFAULT_STATE = {
     },
     trafficInfos: [],
     trafficGroups: {}
+};
+
+export const PROCESS_STATE = {
+    NOT_PROCESSED: 'NOT_PROCESSED',
+    PROCESSING: 'PROCESSING',
+    PROCESSED: 'PROCESSED'
 };
 
 /*
@@ -34,7 +40,8 @@ const DEFAULT_STATE = {
                     'evt': 'v_api',
                     's': '123'
                 }
-            }
+            },
+            processState: 'processing'
         }
     ],
     trafficGroups: {
@@ -50,14 +57,19 @@ const DEFAULT_STATE = {
 
 export default (state, {type, payload}) => {
     switch (type) {
-    case 'INIT':
-        return init(state, payload);
+    case 'INIT_SESSION':
+    case 'INIT_PAGE':
+        return initPage(state, payload);
     case 'NEW_TRAFFIC':
         return handleNewTraffic(state, payload);
     case 'PROCESS_RULE':
         return processRule(state, payload);
     case 'PROCESS_TRAFFICS':
         return processTraffics(state, payload);
+    case 'PROCESSED_TRAFFIC':
+        return processedTraffic(state, payload);
+    case 'PROCESSING_TRAFFIC':
+        return processingTraffic(state, payload);
     case 'REMOVE_RULE':
         return removeRule(state, payload);
     default:
@@ -88,8 +100,12 @@ const removeRule = (state, {ruleId}) => {
     });
 };
 
-const init = (state, {rules}) => {
-    return processTraffics(DEFAULT_STATE, {rules});
+const initPage = (state, payload) => {
+    if (!payload) {
+        return state;
+    }
+
+    return processTraffics(DEFAULT_STATE, payload);
 };
 
 const processRule = (state, {ruleInfo}) => {
@@ -166,7 +182,81 @@ const processTraffics = (state, {rules}) => {
     return state;
 };
 
-const handleNewTraffic = (state, {processors, rules, traffic}) => {
+const processedTraffic = (state, {rules, trafficIndex, processed}) => {
+    const trafficGroups = state.trafficGroups;
+    const trafficInfo = state.trafficInfos[trafficIndex];
+    const trafficInfoUpdate = {};
+    const trafficGroupsUpdate = {};
+
+    trafficInfoUpdate.processed = {
+        $set: processed
+    };
+
+    trafficInfoUpdate.processState = {
+        $set: PROCESS_STATE.PROCESSED
+    };
+
+    rules.ruleIds.forEach((ruleId) => {
+        const ruleInfo = rules.ruleInfos[ruleId];
+
+        if (!isMatchingTraffic(trafficInfo, ruleInfo)) {
+            return;
+        }
+
+        const dataKeys = trafficGroups[ruleInfo.id].dataKeys;
+        const dataKeysUpdate = {};
+
+        ruleInfo.namespaces.forEach((namespace) => {
+            // skip if it's a new namespace
+            if (!dataKeys[namespace]) {
+                return;
+            }
+
+            const newNamespaceDataKeys = [];
+
+            Object.keys(trafficInfo.processed[namespace] || {}).forEach((dataKey) => {
+                if (!dataKeys[namespace].includes(dataKey)) {
+                    newNamespaceDataKeys.push(dataKey);
+                }
+            });
+
+            if (newNamespaceDataKeys.length > 0) {
+                dataKeysUpdate[namespace] = {
+                    $set: dataKeys[namespace].concat(newNamespaceDataKeys).sort()
+                };
+            }
+        });
+
+        trafficGroupsUpdate[ruleInfo.id] = {
+            dataKeys: dataKeysUpdate
+        };
+    });
+
+    state = update(state, {
+        trafficInfos: {
+            [trafficIndex]: trafficInfoUpdate
+        },
+        trafficGroups: trafficGroupsUpdate
+    });
+
+    return state;
+};
+
+const processingTraffic = (state, {trafficIndex}) => {
+    state = update(state, {
+        trafficInfos: {
+            [trafficIndex]: {
+                processState: {
+                    $set: PROCESS_STATE.PROCESSING
+                }
+            }
+        }
+    });
+
+    return state;
+};
+
+const handleNewTraffic = (state, {rules, traffic}) => {
     const filters = state.filters;
     const trafficGroups = state.trafficGroups;
     const index = state.trafficInfos.length;
@@ -178,16 +268,15 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
         path: parsedUrl.pathname,
         port: parsedUrl.port,
         processed: {},
+        processState: PROCESS_STATE.NOT_PROCESSED,
         ruleIds: []
     };
     const trafficGroupsUpdate = {};
     const filtersUpdate = {};
-    const dataKeysUpdate = {};
-    const processQuery = processors.query && processors.query.process;
 
     // process query for all traffic because it's the default processor for new rules
     // will have to ask for user to reload when we do not process query by default
-    trafficInfo.processed.query = typeof processQuery === 'function' ? processQuery(traffic) : {};
+    trafficInfo.processed.query = {};
 
     rules.ruleIds.forEach((ruleId) => {
         const ruleInfo = rules.ruleInfos[ruleId];
@@ -205,39 +294,13 @@ const handleNewTraffic = (state, {processors, rules, traffic}) => {
                 return;
             }
 
-            const newNamespaceDataKeys = [];
-
-            // make sure we only execute processor needed by the rule matching the traffic
-            // and only execute once if a traffic matches two rules using the same processor
+            // setup a placeholder for async processing
             if (!trafficInfo.processed[namespace]) {
-                const {process} = processors[namespace] || {};
-                let processedData = {};
-
-                if (typeof process === 'function') {
-                    try {
-                        processedData = process(traffic);
-                    } catch (e) {
-                        // fail silently
-                    }
-                }
-                trafficInfo.processed[namespace] = validateProcessedData(processedData);
-            }
-
-            Object.keys(trafficInfo.processed[namespace] || {}).forEach((dataKey) => {
-                if (!dataKeys[namespace].includes(dataKey)) {
-                    newNamespaceDataKeys.push(dataKey);
-                }
-            });
-
-            if (newNamespaceDataKeys.length > 0) {
-                dataKeysUpdate[namespace] = {
-                    $set: dataKeys[namespace].concat(newNamespaceDataKeys).sort()
-                };
+                trafficInfo.processed[namespace] = {};
             }
         });
 
         trafficGroupsUpdate[ruleInfo.id] = {
-            dataKeys: dataKeysUpdate,
             trafficIndexes: {
                 $push: [index]
             }

@@ -17,7 +17,12 @@
     ],
     "processor": [
         {
-            "url": "https://github.com/lalau/diver-docs/blob/master/request-processing.md"
+            "url": "https://github.com/lalau/diver-docs/blob/master/request-processing-v2.md"
+        }
+    ],
+    "v2": [
+        {
+            "url": "https://github.com/lalau/diver-docs/blob/master/request-processing-v2.md"
         }
     ]
 }

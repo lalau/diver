@@ -1,9 +1,11 @@
-const updateProcessorActionCreator = ({namespace, url}) => {
+const updateProcessorActionCreator = ({namespace, url, code, isLocal}) => {
     return {
         type: 'UPDATE_PROCESSOR',
         payload: {
             namespace,
-            url
+            url,
+            code,
+            isLocal
         }
     };
 };
