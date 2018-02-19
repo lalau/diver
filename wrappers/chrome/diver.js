@@ -228,6 +228,11 @@ const background = {
                 callback(result);
             }
         });
+    },
+    handleNavigated: () => {
+        chrome.runtime.sendMessage({
+            type: 'NAVIGATED'
+        });
     }
 };
 
@@ -287,6 +292,8 @@ chrome.devtools.network.onNavigated.addListener(() => {
             rules: state.rules
         }
     });
+
+    utility.handleNavigated();
 });
 
 const storeState = {
