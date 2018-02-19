@@ -1,3 +1,5 @@
+import manifest from './manifest';
+
 const handleMessage = (event, sender, sendResponse) => {
     switch (event.type) {
     case 'EXPORT_CONTENT':
@@ -29,7 +31,7 @@ const validateRule = ({type, payload}, sender, sendResponse) => {
 };
 
 const handleNavigated = () => {
-    _gaq.push(['_trackPageview']);
+    ga('send', 'pageview', '/eventpage.html');
 };
 
 chrome.runtime.onMessage.addListener(handleMessage);
@@ -38,12 +40,8 @@ chrome.browserAction.onClicked.addListener(() => {
     chrome.tabs.create({url: 'https://github.com/lalau/diver-docs/blob/master/diver.md'});
 });
 
-
-var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-114277505-1']);
-
-(function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = 'https://ssl.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments);},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m);})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-114277505-1', 'auto');
+ga('set', 'checkProtocolTask', function(){});
+ga('require', 'displayfeatures');
+ga('set', 'dimension1', manifest.version);

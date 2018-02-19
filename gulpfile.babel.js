@@ -9,6 +9,7 @@ const getBaseConfig = () => {
     return {
         entry: {
             diver: './wrappers/chrome/diver.js',
+            eventPage: './wrappers/chrome/eventPage.js',
             sandbox: './wrappers/chrome/sandbox.js'
         },
         output: {
@@ -48,7 +49,7 @@ const getBaseConfig = () => {
             ]
         },
         plugins: [
-            new CopyWebpackPlugin([{from: './wrappers/chrome/'}], {ignore: ['diver.js', 'sandbox.js']})
+            new CopyWebpackPlugin([{from: './wrappers/chrome/'}], {ignore: ['diver.js', 'eventPage.js', 'sandbox.js']})
         ]
     };
 };
