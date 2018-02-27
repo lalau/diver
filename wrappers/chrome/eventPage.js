@@ -3,12 +3,27 @@ import manifest from './manifest';
 const handleMessage = (event, sender, sendResponse) => {
     switch (event.type) {
     case 'EXPORT_CONTENT':
-        return exportContent(event, sender, sendResponse);
-    case 'VALIDATE_RULE':
-        return validateRule(event, sender, sendResponse);
+        return exportContent(event);
+    case 'INIT_PROCESSOR':
+        return initProcessor(event, sender, sendResponse);
     case 'NAVIGATED':
         return handleNavigated(event);
+    case 'PROCESS_TRAFFIC':
+        return processTraffic(event, sender, sendResponse);
+    case 'REMOVE_PROCESSOR':
+        return removeProcessor(event);
+    case 'VALIDATE_RULE':
+        return validateRule(event, sender, sendResponse);
+    case 'VALIDATE_NAMESPACE':
+        return validateNamespace(event, sender, sendResponse);
     }
+};
+
+const handleSandboxMessage = (handler) => {
+    window.addEventListener('message', handler);
+    setTimeout(() => {
+        window.removeEventListener('message', handler);
+    }, 5000);
 };
 
 const exportContent = ({payload}) => {
@@ -18,6 +33,21 @@ const exportContent = ({payload}) => {
     });
 };
 
+const validateNamespace = ({type, payload}, sender, sendResponse) => {
+    const {namespace} = payload;
+
+    setImmediate(() => {
+        sendResponse({
+            type: 'VALIDATE_NAMESPACE_RESULT',
+            result: {
+                namespace,
+                valid: !!document.getElementById('processor-' + namespace)
+            }
+        });
+    });
+    return true;
+};
+
 const validateRule = ({type, payload}, sender, sendResponse) => {
     const handleResult = (event) => {
         if (event.data.type === 'VALIDATE_RULE_RESULT') {
@@ -25,8 +55,86 @@ const validateRule = ({type, payload}, sender, sendResponse) => {
             window.removeEventListener('message', handleResult);
         }
     };
-    window.addEventListener('message', handleResult);
-    document.getElementById('sandboxFrame').contentWindow.postMessage({type, payload}, '*');
+
+    handleSandboxMessage(handleResult);
+    document.getElementById('sandbox-frame').contentWindow.postMessage({type, payload}, '*');
+    return true;
+};
+
+const initProcessor = ({type, payload}, sender, sendResponse) => {
+    const {namespace, getProcessor} = payload;
+
+    if (!namespace || !getProcessor) {
+        setImmediate(() => {
+            sendResponse({
+                type: 'INIT_PROCESSOR_RESULT',
+                result: {
+                    namespace,
+                    valid: false
+                }
+            });
+        });
+        return true;
+    }
+
+    const processorIframe = document.createElement('iframe');
+    const handleInitProcessor = (event) => {
+        if (event.data.type === 'INIT_PROCESSOR_RESULT' && event.data.result.namespace === namespace) {
+            sendResponse(event.data);
+            window.removeEventListener('message', handleInitProcessor);
+        }
+    };
+
+    handleSandboxMessage(handleInitProcessor);
+
+    processorIframe.src = 'processor.html';
+    processorIframe.id = 'processor-' + namespace;
+    processorIframe.addEventListener('load', () => {
+        processorIframe.contentWindow.postMessage({type, payload}, '*');
+    });
+    removeProcessor({
+        payload: {namespace}
+    });
+    document.body.appendChild(processorIframe);
+    return true;
+};
+
+const removeProcessor = ({payload}) => {
+    const processorIframe = document.getElementById('processor-' + payload.namespace);
+    if (processorIframe) {
+        document.body.removeChild(processorIframe);
+    }
+};
+
+const processTraffic = ({type, payload}, sender, sendResponse) => {
+    const {namespace, navigateTimestamp, traffic, trafficIndex} = payload;
+    const processorIframe = namespace && document.getElementById('processor-' + namespace);
+
+    if (!processorIframe || !namespace || !navigateTimestamp || !traffic || typeof trafficIndex !== 'number') {
+        setImmediate(() => {
+            sendResponse({
+                type: 'PROCESS_TRAFFIC_RESULT',
+                result: {
+                    namespace,
+                    navigateTimestamp,
+                    trafficIndex,
+                    processed: {}
+                }
+            });
+        });
+        return true;
+    }
+
+    const handleProcessTraffic = (event) => {
+        const result = event.data.result;
+        if (event.data.type === 'PROCESS_TRAFFIC_RESULT' && result.namespace === namespace && result.navigateTimestamp === navigateTimestamp && result.trafficIndex === trafficIndex) {
+            sendResponse(event.data);
+            window.removeEventListener('message', handleProcessTraffic);
+        }
+    };
+
+    handleSandboxMessage(handleProcessTraffic);
+    processorIframe.contentWindow.postMessage({type, payload}, '*');
     return true;
 };
 

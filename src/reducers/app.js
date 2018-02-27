@@ -1,7 +1,7 @@
 import update from 'immutability-helper';
 import merge from 'lodash/merge';
 
-const QUERY_PROCESSOR_URL = 'https://cdn.jsdelivr.net/gh/lalau/diver-processor@0.10/query.js';
+const QUERY_PROCESSOR_URL = 'https://raw.githubusercontent.com/lalau/diver-processor/master/query2.js';
 
 const DEFAULT_STATE = {
     navigateTimestamp: null,
@@ -9,7 +9,8 @@ const DEFAULT_STATE = {
     selectedTrafficIndex: null,
     state: {
         app: {},
-        page: {}
+        page: {},
+        session: {}
     },
     utility: {}
 };
@@ -18,13 +19,23 @@ const INIT_APP_STATE = {
     viewHints: {
         traffic: true,
         rule: true,
-        processor: true
+        processor: true,
+        v2: false
     },
     processors: {
         query: {
             url: QUERY_PROCESSOR_URL
         }
-    }
+    },
+    rulesUI: {},
+    version: 2
+};
+
+const INIT_SESSION_STATE = {
+    appView: 'traffic',
+    processors: {},
+    processorsLoading: false,
+    processorsUpdated: false
 };
 
 /*
@@ -34,7 +45,8 @@ const INIT_APP_STATE = {
     selectedTrafficIndex: 3,
     state: {
         app: <persistent state>,
-        page: <state reset on navigate>
+        page: <state reset on navigate>,
+        session: <state persistent to extension session>
     }
 }
 */
@@ -45,8 +57,10 @@ export default (state, {type, payload}) => {
         return importAppState(state, payload);
     case 'IMPORT_UTILITY':
         return importUtility(state, payload);
-    case 'INIT':
-        return init(state, payload);
+    case 'INIT_SESSION':
+        return initSession(state, payload);
+    case 'INIT_PAGE':
+        return initPage(state, payload);
     case 'INIT_APP_STATE':
         return initAppState(state, payload);
     case 'REMOVE_PROCESSOR':
@@ -65,15 +79,29 @@ export default (state, {type, payload}) => {
 };
 
 const importAppState = (state, {appState}) => {
+    const loaded = false;
     const newAppState = merge({}, INIT_APP_STATE, appState);
+    const sessionProcessors = Object.keys(newAppState.processors).reduce((accumulator, namespace) => {
+        accumulator[namespace] = {loaded};
+        return accumulator;
+    }, {});
 
     // make sure to use the fixed query processor url
     newAppState.processors.query.url = QUERY_PROCESSOR_URL;
+
+    if (appState.version !== 2) {
+        newAppState.viewHints.v2 = true;
+    }
 
     return update(state, {
         state: {
             app: {
                 $set: newAppState
+            },
+            session: {
+                processors: {
+                    $set: sessionProcessors
+                }
             }
         }
     });
@@ -93,7 +121,17 @@ const initAppState = (state) => {
     });
 };
 
-const init = (state) => {
+const initSession = (state) => {
+    return initPage(update(state, {
+        state: {
+            session: {
+                $set: INIT_SESSION_STATE
+            }
+        }
+    }));
+};
+
+const initPage = (state) => {
     return update(state, {
         navigateTimestamp: {
             $set: Date.now()
@@ -132,7 +170,10 @@ const removeProcessor = (state, {namespace}) => {
                     $unset: [namespace]
                 }
             },
-            page: {
+            session: {
+                processors: {
+                    $unset: [namespace]
+                },
                 processorsUpdated: {
                     $set: true
                 }
@@ -163,17 +204,24 @@ const selectTraffic = (state, {trafficIndex}) => {
     });
 };
 
-const updateProcessor = (state, {namespace, url}) => {
+const updateProcessor = (state, {namespace, url, code, isLocal}) => {
     return update(state, {
         state: {
             app: {
                 processors: {
                     [namespace]: {
-                        $set: {url}
+                        $set: {url, code, isLocal}
                     }
                 }
             },
-            page: {
+            session: {
+                processors: {
+                    [namespace]: {
+                        $set: {
+                            loaded: false
+                        }
+                    }
+                },
                 processorsUpdated: {
                     $set: true
                 }

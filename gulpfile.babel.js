@@ -10,7 +10,8 @@ const getBaseConfig = () => {
         entry: {
             diver: './wrappers/chrome/diver.js',
             eventPage: './wrappers/chrome/eventPage.js',
-            sandbox: './wrappers/chrome/sandbox.js'
+            sandbox: './wrappers/chrome/sandbox.js',
+            processor: './wrappers/chrome/processor.js'
         },
         output: {
             filename: '[name].js'
@@ -49,7 +50,7 @@ const getBaseConfig = () => {
             ]
         },
         plugins: [
-            new CopyWebpackPlugin([{from: './wrappers/chrome/'}], {ignore: ['diver.js', 'eventPage.js', 'sandbox.js']})
+            new CopyWebpackPlugin([{from: './wrappers/chrome/'}, {from: './images/', to: 'images/'}], {ignore: ['diver.js', 'eventPage.js', 'sandbox.js', 'processor.js']})
         ]
     };
 };

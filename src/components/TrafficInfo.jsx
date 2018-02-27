@@ -5,8 +5,9 @@ import {bindActionCreators} from 'redux';
 import classnames from 'classnames';
 import SimpleInput from './partials/SimpleInput.jsx';
 import selectTrafficActionCreator from '../actions/select-traffic-action-creator';
+import updateAppStateActionCreator from '../actions/update-app-state-action-creator';
 import updateRuleDataActionCreator from '../actions/update-rule-data-action-creator';
-import {formatDataValue, getRuleDataIndex, getTrafficLabel} from '../lib/util';
+import {formatDataValue, getRuleDataIndex, getTrafficLabel, mergeProcessorsState} from '../lib/util';
 
 class TrafficInfo extends React.Component {
     constructor(props) {
@@ -21,6 +22,7 @@ class TrafficInfo extends React.Component {
         this.deselectTraffic = this.deselectTraffic.bind(this);
         this.expandUrl = this.toggleUrlExpand.bind(this, true);
         this.exportTraffic = this.exportTraffic.bind(this);
+        this.inspectTraffic = this.inspectTraffic.bind(this);
         this.selectRuleId = this.selectRuleId.bind(this);
         this.toggleData = this.toggleData.bind(this);
     }
@@ -54,6 +56,24 @@ class TrafficInfo extends React.Component {
         utility.exportContent({
             name: trafficInfo.hostname + '-' + trafficInfo.index,
             content: trafficInfo.traffic
+        });
+    }
+
+    inspectTraffic() {
+        const {trafficInfo, updateAppStateAction} = this.props;
+
+        updateAppStateAction({
+            scope: 'page',
+            key: 'inspectingTraffic',
+            value: {
+                traffic: trafficInfo.traffic
+            }
+        });
+
+        updateAppStateAction({
+            scope: 'session',
+            key: 'appView',
+            value: 'processor'
         });
     }
 
@@ -219,6 +239,7 @@ class TrafficInfo extends React.Component {
             <div className='traffic-info'>
                 <div className='pane-section pane-top-menu pane-top-menu-right'>
                     <button className='pane-top-menu-button diver-button' onClick={this.exportTraffic}>&#8682; Export</button>
+                    <button className='pane-top-menu-button diver-button' onClick={this.inspectTraffic}>&#9678; Inspect</button>
                     <button className='pane-top-menu-button diver-button' onClick={this.deselectTraffic}>&#10132; Close</button>
                 </div>
                 {this.renderUrl()}
@@ -240,7 +261,7 @@ TrafficInfo.propTypes = {
 
 const mapStateToProps = (state) => {
     return {
-        processors: state.app.state.app.processors,
+        processors: mergeProcessorsState(state.app.state.app.processors, state.app.state.session.processors),
         ruleIds: state.rules.ruleIds,
         ruleInfos: state.rules.ruleInfos,
         trafficGroups: state.traffics.trafficGroups,
@@ -252,6 +273,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
     return {
         selectTrafficAction: bindActionCreators(selectTrafficActionCreator, dispatch),
+        updateAppStateAction: bindActionCreators(updateAppStateActionCreator, dispatch),
         updateRuleDataAction: bindActionCreators(updateRuleDataActionCreator, dispatch)
     };
 };

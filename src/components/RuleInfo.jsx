@@ -19,7 +19,7 @@ import updateRuleLabelActionCreator from '../actions/update-rule-label-action-cr
 import SimpleButton from './partials/SimpleButton.jsx';
 import SimpleInput from './partials/SimpleInput.jsx';
 import SimpleSelect from './partials/SimpleSelect.jsx';
-import {getRuleDataIndex} from '../lib/util';
+import {getRuleDataIndex, mergeProcessorsState} from '../lib/util';
 import set from 'lodash/set';
 import update from 'immutability-helper';
 import uuidv1 from 'uuid/v1';
@@ -523,7 +523,7 @@ RuleInfo.propTypes = {
 
 const mapStateToProps = (state) => {
     return {
-        processors: state.app.state.app.processors,
+        processors: mergeProcessorsState(state.app.state.app.processors, state.app.state.session.processors),
         ruleInfo: state.rules.ruleInfos[state.app.selectedRuleId],
         selectedRuleId: state.app.selectedRuleId,
         trafficFilters: state.traffics.filters,

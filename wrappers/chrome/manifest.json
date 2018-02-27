@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Diver - Web Traffic Monitor Tool",
-    "version": "1.0.5",
+    "version": "2.0.0",
 
     "description": "Monitor requests based on the your own rules and perform custom processing on them.",
     "icons": {
@@ -20,16 +20,18 @@
         "page": "eventpage.html",
         "persistent": false
     },
-    "content_security_policy": "script-src 'self' https://cdn.jsdelivr.net https://www.google-analytics.com; object-src 'self'",
+    "content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'",
     "devtools_page": "devtools.html",
     "minimum_chrome_version" : "57",
     "permissions": [
         "activeTab",
         "storage",
-        "downloads"
+        "downloads",
+        "http://*/",
+        "https://*/"
     ],
     "sandbox": {
-        "pages": ["sandbox.html"]
+        "pages": ["sandbox.html", "processor.html"]
     },
     "short_name": "Diver"
 }
