@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Diver - Web Traffic Monitor Tool",
-    "version": "2.0.0",
+    "version": "2.0.1",
 
     "description": "Monitor requests based on the your own rules and perform custom processing on them.",
     "icons": {

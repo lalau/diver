@@ -293,7 +293,7 @@ chrome.devtools.network.onNavigated.addListener(() => {
         }
     });
 
-    utility.handleNavigated();
+    background.handleNavigated();
 });
 
 const storeState = {
