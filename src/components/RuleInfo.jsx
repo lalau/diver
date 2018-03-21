@@ -340,11 +340,12 @@ class RuleInfo extends React.Component {
                         <option value=''>&#8213; Filter &#8213;</option>
                         <option value='domain'>domain</option>
                         <option value='has-response-header'>has-response-header</option>
+                        <option value='larger-than'>larger-than</option>
                         <option value='method'>method</option>
                         <option value='mime-type'>mime-type</option>
                         <option value='path'>path</option>
+                        <option value='protocol'>protocol</option>
                         <option value='status-code'>status-code</option>
-                        <option value='larger-than'>larger-than</option>
                     </select>
                 </div>
             </div>

@@ -20,6 +20,8 @@ export const isMatchingTraffic = (trafficInfo, ruleInfo) => {
             return testStr(trafficInfo.traffic.response.status + '', value);
         } else if (name === 'larger-than') {
             return trafficInfo.traffic.response.content.size > translateSize(value);
+        } else if (name === 'protocol') {
+            return testStr(trafficInfo.protocol, value);
         }
 
         return true;

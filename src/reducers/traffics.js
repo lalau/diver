@@ -9,6 +9,7 @@ const DEFAULT_STATE = {
         method: [],
         'mime-type': [],
         path: [],
+        protocol: [],
         'status-code': [],
         'larger-than': ['100', '10k', '1M']
     },
@@ -269,6 +270,7 @@ const handleNewTraffic = (state, {rules, traffic}) => {
         port: parsedUrl.port,
         processed: {},
         processState: PROCESS_STATE.NOT_PROCESSED,
+        protocol: parsedUrl.protocol,
         ruleIds: []
     };
     const trafficGroupsUpdate = {};
@@ -312,6 +314,7 @@ const handleNewTraffic = (state, {rules, traffic}) => {
     filtersUpdate.method = getSetValueUpdate(filters.method, trafficInfo.traffic.request.method);
     filtersUpdate['mime-type'] = getSetValueUpdate(filters['mime-type'], trafficInfo.traffic.response.content.mimeType);
     filtersUpdate['status-code'] = getSetValueUpdate(filters['status-code'], trafficInfo.traffic.response.status + '');
+    filtersUpdate.protocol = getSetValueUpdate(filters.protocol, trafficInfo.protocol);
 
     state = update(state, {
         filters: filtersUpdate,
